@@ -1,0 +1,38 @@
+name: Extended e2e (non-gating)
+
+# WebKit phone (smoke), desktop 1440x900, landscape 844x390 and small phone 360x740.
+# Never blocks a deploy: it runs nightly, on demand, and after pushes.
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  extended:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium-desktop, chromium-landscape, chromium-small, webkit-phone]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npx playwright test --project=${{ matrix.project }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-${{ matrix.project }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
