@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "boba-dev", "runtimeExecutable": "npx", "runtimeArgs": ["vite", "--port", "5287", "--strictPort"], "port": 5287, "url": "http://localhost:5287" }
+  ]
+}
