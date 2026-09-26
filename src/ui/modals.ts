@@ -83,8 +83,14 @@ export class Modals {
       onStart();
     };
     this.startFire = () => fire();
-    s.addEventListener('pointerup', fire);
-    s.addEventListener('touchend', fire);
+    // Only a press that starts on this screen counts: lifting the finger that just held
+    // Reset (the screen appears under it) must not skip straight past the title.
+    let pressed = false;
+    s.addEventListener('pointerdown', () => { pressed = true; });
+    s.addEventListener('touchstart', () => { pressed = true; }, { passive: true });
+    const release = (e: Event) => { if (pressed) fire(e); };
+    s.addEventListener('pointerup', release);
+    s.addEventListener('touchend', release);
     s.addEventListener('keydown', fire);
     window.addEventListener('keydown', function k(e) { if (!done && (e.key === ' ' || e.key === 'Enter')) { window.removeEventListener('keydown', k); fire(e); } });
   }

@@ -45,7 +45,7 @@ export class CameraRig {
     const fitW = frameW / 2 / Math.tan(hfov / 2);
     const pitch = (C.pitchDeg * Math.PI) / 180;
     const fitD = (frameD * Math.sin(pitch)) / 2 / Math.tan(vfov / 2);
-    return this.aspect < 1 ? Math.max(base * 0.8, fitW * C.portraitDistanceBoost) : Math.max(base * 0.8, Math.min(fitD, fitW * 1.6));
+    return this.aspect < 1 ? Math.max(base * 0.8, fitW * C.portraitDistanceBoost) : Math.max(base * 0.8, Math.min(fitD, fitW * C.landscapeWidthCap));
   }
 
   setStage(stageId: string, focus: { x: number; z: number }, instant = false): void {
@@ -77,8 +77,9 @@ export class CameraRig {
     this.trauma.update(dt);
     // Follow: blend between stage focus and player, with a little look-ahead.
     const w = C.followWeight[this.stageId] ?? 0.5;
+    const fz = this.focus.z + (this.aspect >= 1 ? (C.landscapeFocusZ[this.stageId] ?? 0) : 0);
     const tx = this.focus.x + (player.x + player.vx * C.lookAhead - this.focus.x) * w;
-    let tz = this.focus.z + (player.z + player.vz * C.lookAhead - this.focus.z) * w;
+    let tz = fz + (player.z + player.vz * C.lookAhead - fz) * w;
     // Stop following once the bottom screen edge would pass the back of the lot.
     const back = C.backLimitZ[this.stageId];
     if (back !== undefined) {

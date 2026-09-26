@@ -5,6 +5,26 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { toon, outline } from './materials';
 
+/**
+ * Publish this frame's instances: upload only the live ones (buffers are sized for the worst
+ * case) and hide the mesh when it has none, so three.js skips its program and uniform setup.
+ */
+export function commitInstances(mesh: THREE.InstancedMesh, count: number): void {
+  mesh.count = count;
+  mesh.visible = count > 0;
+  if (count === 0) return;
+  const m = mesh.instanceMatrix;
+  m.clearUpdateRanges();
+  m.addUpdateRange(0, count * 16);
+  m.needsUpdate = true;
+  const c = mesh.instanceColor;
+  if (c) {
+    c.clearUpdateRanges();
+    c.addUpdateRange(0, count * 3);
+    c.needsUpdate = true;
+  }
+}
+
 export function roundedBox(w: number, h: number, d: number, r = 0.06, seg = 2): THREE.BufferGeometry {
   return new RoundedBoxGeometry(w, h, d, seg, Math.min(r, w / 2 - 1e-3, h / 2 - 1e-3, d / 2 - 1e-3));
 }

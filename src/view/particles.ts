@@ -174,6 +174,7 @@ export class Particles {
       i++;
     }
     this.geo.instanceCount = this.alive;
+    this.mesh.visible = this.alive > 0;
     if (this.alive) {
       this.aPos.needsUpdate = true;
       this.aP.needsUpdate = true;
@@ -186,5 +187,5 @@ export class Particles {
     }
   }
 
-  clear(): void { this.alive = 0; this.geo.instanceCount = 0; }
+  clear(): void { this.alive = 0; this.geo.instanceCount = 0; this.mesh.visible = false; }
 }

@@ -45,9 +45,9 @@ One line per call. Where the brief was silent, I picked whatever makes the game 
 - The combo timer runs out → the combo drops one tier quietly (soft fade, no shatter, no desaturation, no buzz) and the timer restarts.
 - A walkout during a rush is the full COMBO BROKEN: cartoon crack sound, a "boing", a quick wobble, big pink words. Short and funny.
 - The combo multiplier applies to tips, plus 30% of the price per tier step (`comboPriceShare`); there is no XP system in V1, so "XP" isn't boosted.
-- The practice rush uses gentler patience drain (1.1× instead of 1.6×) and 1.3× crowd patience so walkouts are unlikely while learning.
+- The practice rush uses gentler patience drain (1.1× instead of 1.4×) and 1.3× crowd patience so walkouts are unlikely while learning.
 - The rush results card pauses the sim while it's up; claiming pays a small bonus (2 coins per serve). Reloading with an unclaimed card pays it out automatically.
-- Rush "world time scale 1.5×, player 1.35×, patience 1.6×" are implemented as sim modifiers (a shared modifier stack) that ease in over 0.35s; the *global* timeScale is reserved for hit-stop, the rush-end slow-mo wind-down and debug.
+- Rush "world time scale 1.5×, player 1.35×, patience 1.6×" (patience now 1.4×, see Rush tuning) are implemented as sim modifiers (a shared modifier stack) that ease in over 0.35s; the *global* timeScale is reserved for hit-stop, the rush-end slow-mo wind-down and debug.
 - During the warning the crowd bunches up outside; when the rush starts they pour into the line as spots free.
 
 ## Upgrades
@@ -56,7 +56,7 @@ One line per call. Where the brief was silent, I picked whatever makes the game 
 - Cart upgrades you skipped stay available in the shop. The Bench is cart-only; in the shop, Seating adds a bench along the queue rope.
 
 ## Progression and pacing
-- The goal (Tiny Shop) pad appears at the goal beat (8:00 game time). Shop price 375, so the competent bot lands at 8.3–9.2 game-minutes and the casual bot at 14.1–14.6 (see `tests/botpace.test.ts`).
+- The goal (Tiny Shop) pad appears at the goal beat (8:00 game time). Shop price 375, so the competent bot lands at 8.1–9.0 game-minutes and the casual bot at 13.6–14.3 (see `tests/botpace.test.ts`).
 - Post-shop unlocks: Rainbow Jelly (+ ice recipe) 15s after the reveal, Taro at +150s, Rainbow Taro Slush at +300s. Each is offered with the menu card.
 - Menu choice: new recipes are offered on a card (icons: "pays more", "takes longer"). The menu board station (appears with the second topping) reopens the choice; at least one drink always stays on the menu.
 
@@ -74,6 +74,7 @@ One line per call. Where the brief was silent, I picked whatever makes the game 
 
 ## Camera
 - Portrait frames a fixed width per stage (cart 7.1m, shop 9.8m) and follows the player (weight 0.6 / 0.8); landscape frames ground depth instead. The shop is intentionally not all on screen at once on a phone: characters and cups stay big enough to read.
+- Landscape frames ground depth (cart 13 m, shop 16 m) and leans 0.6–0.9 m toward the street (`camera.landscapeFocusZ`). At 16:10 the old framing cut the line of customers off the top of the screen, and with it their order bubbles. Now the first queue spot sits ~15% below the top edge on desktop and on a landscape phone.
 - A tall phone screen shows ~28m of ground depth at the shop's width, and the shop is only ~14m deep. The follow stops once the bottom screen edge would pass the back of the lot (`camera.backLimitZ`). The spare space goes to the street, the road and the FOR SALE lots across it (the world the game grows into), not to empty grass behind the shop.
 
 ## Tech
@@ -85,5 +86,37 @@ One line per call. Where the brief was silent, I picked whatever makes the game 
 ## Rush tuning (M4)
 - Practice rush is 28s (the brief says ~20s): at ~5s per drink under rush, two carry-2 round trips (4 serves → x3) don't fit in 20s once the crowd has to walk in. Thresholds stay 2/4/6 as specified.
 - Practice rush crowd lines up during the "RUSH INCOMING" warning (a head start) and orders the simplest drink (Pearl Tea). Both are event data (`crowdEarly`, `crowdRecipe`).
-- The goal pad appears at exactly 8:00 game time (matches "8:00–10:00: toward the goal"); Tiny Shop price 375. Competent bot: 8.3–9.2 min; casual: 14.1–14.6 min.
+- The goal pad appears at exactly 8:00 game time (matches "8:00–10:00: toward the goal"); Tiny Shop price 375. Competent bot: 8.1–9.0 min; casual: 13.6–14.3 min.
 - Flash limiter is a pure function (`ui/flash.ts`) unit-tested against spammed tier-ups: never more than one edge flash per 1/3 s.
+
+## Frame times (advisory, M6)
+Measured with `node scripts/perf.mjs` (best of 3): headless Chromium on a real GPU (Intel Iris Xe, ANGLE D3D11), 390×844 at DPR 2, the competent bot playing. CI can't measure this (software WebGL), so it isn't a gate.
+
+| Scene | Main thread per frame, unthrottled | 4× CPU throttle: fps, p50 / p95 / p99 | Draw calls |
+|---|---|---|---|
+| Cart | 1.8 ms (60 fps) | 42 fps, 16.7 / 50 / 83 ms | 83 |
+| Busiest (rush + 20 customers + 12-cup stack) | 4.8 ms (53 fps) | 33 fps, 33 / 50 / 100 ms | 74 |
+| Tiny Shop | 4.4 ms (60 fps) | 27 fps, 33 / 50 / 83 ms | 81 |
+
+- **The 4×-throttle target (p95 ≤ 16.7 ms, p99 ≤ 33 ms) is not met on this machine.** Treat the throttled column with caution. Another app was using ~2 CPU cores and the GPU throughout, and the same cart run ranged from 23 to 52 fps between attempts. Even the cart, which needs ~7 ms of CPU per frame at 4×, hitches to 50 ms. The unthrottled column is the steadier signal. The real check is a phone with `?debug=1` (see README).
+- What M6 fixed (shop main thread went from ~8 ms to 4.4 ms per frame):
+  - **Layout thrash:** `project()` read `canvas.clientWidth` for every label while labels were being moved, forcing a layout per call. It's now cached on resize.
+  - **Program re-resolution:** cached materials were shared between `Mesh` and `InstancedMesh` users, so three.js recomputed program parameters on every draw. Each material now serves one kind of mesh (`MatUse`).
+  - **Invisible draws:** station glow rings drew at opacity 0, and empty instanced meshes still paid program setup. Both are hidden now.
+  - **Oversized uploads:** instance buffers uploaded their full capacity (1,400 toppings) every frame. `commitInstances` uploads only live instances.
+  - **Player head:** skull, ears and cap merged into one mesh (8 draws → 2).
+  - **Label writes:** bubble DOM writes are skipped when nothing changed.
+  - **Debug overlay:** the FPS overlay refreshes at 4 Hz.
+- Next levers if phones struggle: merge the static parts of the stations (35 draws in the shop), and draw the player's arms and feet as instances. Adaptive DPR already drops resolution when frames run long.
+
+## Shop rush tuning (M6)
+- **Before:** a competent bot in a fully upgraded Tiny Shop made only 5–8 drinks per 30–45 s rush, about 6 s each. Shaking took 1.75 s, walking about 2 s (the shop is wider than the cart), steps 0.75 s, and human-like reaction pauses the rest. The old shop table (x10 at 15 serves) was out of reach, and walkouts broke most combos: rush patience drain was 1.6× with a 44 s base.
+- **Changes:** the shop combo table is now 2/4/6/8 (x10 at 8 serves), rush patience drain is 1.4×, and shop patience is 52 s.
+- **Result (8 seeds, `tests/rush.test.ts`):** with every shop upgrade, x10 in 2–3 rushes and x5 or better in 7. With only the carry upgrades, x2–x5. x10 is a peak moment that upgrades and good play earn. The cart keeps 2/4/7/12, so x10 stays a shop thing.
+- The Extra queue spot is a real trade-off in rushes: a longer line means more people who can run out of patience. The gentler drain above keeps it from breaking most combos.
+- The competent bot now plays like a good player:
+  - It serves in batches of 3 (2 in a rush) instead of filling an 8-cup tray first.
+  - It rescues a customer who is below 35% patience.
+  - It serves before a rush combo timer runs out.
+  - It doesn't shop for upgrades mid-rush.
+- The casual bot is unchanged. Pacing still lands at 8.1–9.0 min (competent) and 13.6–14.3 min (casual).

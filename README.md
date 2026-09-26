@@ -6,9 +6,9 @@ A cute, tactile 3D boba restaurant game for phone and desktop browsers. Start wi
 
 ![Ten drinks](docs/screenshots/drinks.png)
 
-| | | |
-|---|---|---|
-| ![Rush](docs/screenshots/m4/phone-rush-combo.png) | ![Stack](docs/screenshots/m3/phone-stack12.png) | ![Shop](docs/screenshots/m5/phone-shop.png) |
+| | | | |
+|---|---|---|---|
+| ![Shake](docs/screenshots/m6/phone-shake.png) | ![Rush combo](docs/screenshots/m6/phone-rush-combo.png) | ![Stack](docs/screenshots/m6/phone-stack.png) | ![Tiny Shop](docs/screenshots/m6/phone-shop.png) |
 
 ## How to play
 
@@ -64,7 +64,7 @@ Playwright on Chromium phone (390×844) against a production build: input method
 npm run build
 ```
 
-Typechecks and builds to `dist/` (base `/boba-tycoon/`). CI (`.github/workflows/deploy.yml`) runs lint, typecheck, unit tests, build and the Chromium-phone e2e, then deploys to GitHub Pages.
+Typechecks and builds to `dist/` (base `/boba-tycoon/`). With `npx vite preview --port 4391` running, `node scripts/perf.mjs` measures advisory frame times on your real GPU (numbers and caveats are in `docs/DECISIONS.md`), and `node scripts/screenshots.mjs` reshoots the curated screenshots. CI (`.github/workflows/deploy.yml`) runs lint, typecheck, unit tests, build and the Chromium-phone e2e, then deploys to GitHub Pages.
 
 ### Dev flags
 

@@ -62,6 +62,7 @@ export class Game {
   private starsShown = false;
   private skipBtn: HTMLButtonElement | null = null;
   private frameTimes: number[] = [];
+  private fpsT = 0;
   private fpsEl: HTMLDivElement | null = null;
   private dpr = Math.min(feel.perf.dprMax, window.devicePixelRatio || 1);
   private dprCheckT = 0;
@@ -546,7 +547,10 @@ export class Game {
       if (avg > P.dprDownAtMs && this.dpr > P.dprMin) { this.dpr = Math.max(P.dprMin, this.dpr - 0.25); this.view.setDpr(this.dpr); this.resize(); }
       else if (avg < P.dprUpAtMs && this.dpr < Math.min(P.dprMax, window.devicePixelRatio || 1)) { this.dpr = Math.min(P.dprMax, this.dpr + 0.25); this.view.setDpr(this.dpr); this.resize(); }
     }
-    if (this.fpsEl) {
+    // The overlay refreshes at 4 Hz so measuring doesn't cost a sort + text layout every frame.
+    this.fpsT += realDt;
+    if (this.fpsEl && this.fpsT >= 0.25) {
+      this.fpsT = 0;
       const p = this.perf();
       this.fpsEl.textContent = `${p.fps.toFixed(0)} fps  p95 ${p.p95.toFixed(1)}ms  p99 ${p.p99.toFixed(1)}ms\ncpu ${cpuMs.toFixed(1)}ms  calls ${p.calls}  tris ${(p.triangles / 1000).toFixed(1)}k\ntex ${p.textures}  dpr ${this.dpr}  ${__BUILD_HASH__}`;
     }

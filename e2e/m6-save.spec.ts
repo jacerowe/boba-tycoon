@@ -82,6 +82,10 @@ test('reset needs a hold to confirm', async ({ page }) => {
   await page.waitForTimeout(1900);
   await page.mouse.up();
   await page.waitForFunction(() => (window as any).__boba.game.sim.world.director.beat === 'start', undefined, { timeout: 10_000 });
+  // The title waits for a fresh tap: lifting the finger that held Reset doesn't skip it.
+  await page.waitForTimeout(500);
+  await expect(page.locator('.start')).toBeVisible();
+  expect((await state(page)).world.director.beat).toBe('start');
   expect(errorsOf(page)).toEqual([]);
 });
 

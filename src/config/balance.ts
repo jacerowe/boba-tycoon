@@ -41,7 +41,7 @@ export const balance = {
 
   patience: {
     /** Seconds from full to walkout, per stage. Bench/seats slow the drain. */
-    baseSec: { cart: 40, tinyShop: 44 } as Record<string, number>,
+    baseSec: { cart: 40, tinyShop: 52 } as Record<string, number>,
     /** Random spread ±fraction. */
     spread: 0.15,
     /** Mood thresholds (fraction of patience left): happy > a, neutral > b, angry > c, furious > 0. */
@@ -132,7 +132,7 @@ export const balance = {
     tables: {
       practice: [2, 4, 6],
       cart: [2, 4, 7, 12],
-      tinyShop: [3, 6, 10, 15],
+      tinyShop: [2, 4, 6, 8],
     } as Record<string, number[]>,
   },
 
@@ -143,7 +143,7 @@ export const balance = {
     /** Everything speeds up. */
     speedMult: 1.5,
     playerSpeedMult: 1.35,
-    patienceDrainMult: 1.6,
+    patienceDrainMult: 1.4,
     brewSpeedMult: 1.5,
     spawnMult: 2.4,
     /** Crowd that bunches up outside during the warning. */

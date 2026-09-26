@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { palette } from '../config/style';
 import { feel } from '../config/feel';
 import { toon, outline } from './materials';
-import { cylinder } from './geometry';
+import { cylinder, commitInstances } from './geometry';
 
 interface Coin {
   x: number; y: number; z: number; vx: number; vy: number; vz: number;
@@ -27,8 +27,8 @@ export class Coins {
   constructor(private max = feel.particles.coinsMax) {
     const geo = cylinder(0.11, 0.11, 0.035, 14);
     geo.rotateX(Math.PI / 2);
-    this.mesh = new THREE.InstancedMesh(geo, toon(palette.coin), max);
-    this.outlineMesh = new THREE.InstancedMesh(geo, outline(0.018), max);
+    this.mesh = new THREE.InstancedMesh(geo, toon(palette.coin, { use: 'inst' }), max);
+    this.outlineMesh = new THREE.InstancedMesh(geo, outline(0.018, undefined, 'inst'), max);
     this.mesh.count = 0;
     this.outlineMesh.count = 0;
     this.mesh.frustumCulled = false;
@@ -101,11 +101,7 @@ export class Coins {
       this.mesh.setMatrixAt(i, this.m);
       this.outlineMesh.setMatrixAt(i, this.m);
     }
-    this.mesh.count = n;
-    this.outlineMesh.count = n;
-    if (n) {
-      this.mesh.instanceMatrix.needsUpdate = true;
-      this.outlineMesh.instanceMatrix.needsUpdate = true;
-    }
+    commitInstances(this.mesh, n);
+    commitInstances(this.outlineMesh, n);
   }
 }

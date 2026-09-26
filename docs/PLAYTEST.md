@@ -4,7 +4,8 @@ Honest notes from automated runs, screenshot reviews and my own play in the brow
 
 ## How I tested
 
-- Sim bots (Vitest, fast-forwarded): competent reaches the Tiny Shop in 8.3–9.2 game-minutes, casual in 14.1–14.6; first serve ≈15 s; practice rush reaches x3 with carry 2 on every seed tested.
+- Sim bots (Vitest, fast-forwarded): competent reaches the Tiny Shop in 8.1–9.0 game-minutes, casual in 13.6–14.3; first serve ≈15 s; practice rush reaches x3 with carry 2 on every seed tested.
+- Shop rushes (Vitest, 8 seeds, every shop upgrade): the competent bot reaches x10 in 2–3 rushes and x5+ in 7; with only carry upgrades it gets x2–x5. Before M6 tuning x10 was unreachable (see DECISIONS, Shop rush tuning).
 - Rendered e2e on Chromium phone (390×844): a fresh save driven by the competent bot at 8× reaches the Tiny Shop at ~8.3 game-minutes with every beat in order and no console errors. A 2 s filmstrip of that run is in `docs/screenshots/filmstrip/fullrun.png`.
 - Screenshots of every key moment are in `docs/screenshots/`.
 
@@ -17,7 +18,8 @@ Honest notes from automated runs, screenshot reviews and my own play in the brow
 
 ## Rough edges (known)
 
-- **Frame rate is unmeasured on real phones.** CI uses software WebGL (~15 fps headless); the draw-call and triangle budgets hold, but only Jace's phone with `?debug=1` can say how it feels.
+- **Frame rate on a mid-range phone is the biggest unknown.** On a laptop GPU (Intel Iris Xe) the cart and shop hold 60 fps using 2–5 ms of main thread per frame. With 4× CPU throttling (the mid-range-phone proxy) it drops to ~27–42 fps, short of the 60 fps target. The laptop was also busy with another app, so those numbers are pessimistic but real (details in DECISIONS). Adaptive resolution kicks in when frames run long. Jace's phone with `?debug=1` is the real test.
+- **Busy moments stack up words.** POUR!, SCOOP!, CHUNK! and GREAT! can overlap when steps chain quickly. Each stays readable and on screen, but the rush can look noisy.
 - **The shake is tuned on synthetic traces.** Thresholds (4 / 8 reversals, ±35% tempo) are a guess at human thumbs; real swipes may want a longer window or a looser tempo. Try `?feel.shake.windowSec=2` if PERFECT feels impossible.
 - **Early game can drag for a very slow player.** Before the walkout lesson customers never leave, which is kind, but the line can look stuck.
 - **Drink colors lean amber/caramel** until taro and jelly arrive after the shop.

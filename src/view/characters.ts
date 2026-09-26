@@ -2,7 +2,7 @@
 // varied colors, hats and heights. Immediate-mode: begin(), draw(pose) per character, end().
 import * as THREE from 'three';
 import { palette } from '../config/style';
-import { capsule, sphere, cylinder, MeshBuilder } from './geometry';
+import { capsule, sphere, cylinder, MeshBuilder, commitInstances } from './geometry';
 import { toon, outline, blobShadowMaterial } from './materials';
 import { customerFaceAtlas, FACE_COLS, FACE_ROWS } from './textures';
 import { Rng } from '../sim/rng';
@@ -124,32 +124,32 @@ export class CharacterRenderer {
   constructor(readonly max = 48) {
     const bodyGeo = capsule(0.27, 0.26, 4, 12);
     bodyGeo.translate(0, 0.5, 0);
-    this.body = new THREE.InstancedMesh(bodyGeo, toon('#ffffff'), max);
-    this.bodyO = new THREE.InstancedMesh(bodyGeo, outline(0.03), max);
+    this.body = new THREE.InstancedMesh(bodyGeo, toon('#ffffff', { use: 'instColor' }), max);
+    this.bodyO = new THREE.InstancedMesh(bodyGeo, outline(0.03, undefined, 'inst'), max);
     const headGeo = sphere(HEAD_R, 14, 10);
-    this.head = new THREE.InstancedMesh(headGeo, toon('#ffffff'), max);
-    this.headO = new THREE.InstancedMesh(headGeo, outline(0.03), max);
+    this.head = new THREE.InstancedMesh(headGeo, toon('#ffffff', { use: 'instColor' }), max);
+    this.headO = new THREE.InstancedMesh(headGeo, outline(0.03, undefined, 'inst'), max);
     const hairGeo = new THREE.SphereGeometry(HEAD_R + 0.02, 12, 5, 0, Math.PI * 2, 0, Math.PI * 0.42);
     hairGeo.rotateX(-0.35);
-    this.hair = new THREE.InstancedMesh(hairGeo, toon('#ffffff'), max);
+    this.hair = new THREE.InstancedMesh(hairGeo, toon('#ffffff', { use: 'instColor' }), max);
     const faceGeo = facePatch();
     this.aFace = new THREE.InstancedBufferAttribute(new Float32Array(max), 1).setUsage(THREE.DynamicDrawUsage);
     faceGeo.setAttribute('iFace', this.aFace);
     this.face = new THREE.InstancedMesh(faceGeo, faceMaterial(), max);
     const footGeo = sphere(0.1, 8, 5);
     footGeo.scale(1, 0.6, 1.35);
-    this.feet = new THREE.InstancedMesh(footGeo, toon(palette.cartWheel), max * 2);
+    this.feet = new THREE.InstancedMesh(footGeo, toon(palette.cartWheel, { use: 'inst' }), max * 2);
     const armGeo = capsule(0.075, 0.18, 2, 6);
-    this.arms = new THREE.InstancedMesh(armGeo, toon('#ffffff'), max * 2);
+    this.arms = new THREE.InstancedMesh(armGeo, toon('#ffffff', { use: 'instColor' }), max * 2);
     const shGeo = new THREE.PlaneGeometry(0.95, 0.95).rotateX(-Math.PI / 2);
-    this.shadow = new THREE.InstancedMesh(shGeo, blobShadowMaterial(), max);
+    this.shadow = new THREE.InstancedMesh(shGeo, blobShadowMaterial('inst'), max);
     this.shadow.renderOrder = 1;
     for (const mesh of [this.body, this.head, this.hair, this.arms]) mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3);
     for (let t = 1; t <= 5; t++) {
       const g = hatGeo(t);
-      const hm = new THREE.InstancedMesh(g, toon('#ffffff', { vertexColors: true }), max);
+      const hm = new THREE.InstancedMesh(g, toon('#ffffff', { vertexColors: true, use: 'instColor' }), max);
       hm.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3);
-      const ho = new THREE.InstancedMesh(g, outline(0.024), max);
+      const ho = new THREE.InstancedMesh(g, outline(0.024, undefined, 'inst'), max);
       this.hats[t] = hm;
       this.hatsO[t] = ho;
       this.group.add(hm, ho);
@@ -223,22 +223,11 @@ export class CharacterRenderer {
 
   end(): void {
     const n = this.n;
-    for (const mesh of [this.body, this.bodyO, this.head, this.headO, this.hair, this.face, this.shadow]) {
-      mesh.count = n;
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    }
-    for (const mesh of [this.feet, this.arms]) {
-      mesh.count = n * 2;
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    }
+    for (const mesh of [this.body, this.bodyO, this.head, this.headO, this.hair, this.face, this.shadow]) commitInstances(mesh, n);
+    for (const mesh of [this.feet, this.arms]) commitInstances(mesh, n * 2);
     for (let t = 1; t <= 5; t++) {
-      this.hats[t].count = this.hatN[t];
-      this.hatsO[t].count = this.hatN[t];
-      this.hats[t].instanceMatrix.needsUpdate = true;
-      this.hatsO[t].instanceMatrix.needsUpdate = true;
-      this.hats[t].instanceColor!.needsUpdate = true;
+      commitInstances(this.hats[t], this.hatN[t]);
+      commitInstances(this.hatsO[t], this.hatN[t]);
     }
     this.aFace.needsUpdate = true;
   }

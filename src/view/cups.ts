@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { palette } from '../config/style';
 import { toon, outline } from './materials';
-import { cupProfile, lathe, sphere, roundedBox, cylinder, torus } from './geometry';
+import { cupProfile, lathe, sphere, roundedBox, cylinder, torus, commitInstances } from './geometry';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const CUP = { H: 0.58, RT: 0.205, RB: 0.165, INNER: 0.9 } as const;
@@ -226,30 +226,30 @@ export class CupRenderer {
     rimGeo.rotateX(Math.PI / 2);
     rimGeo.translate(0, CUP.H, 0);
     const hullGeo = mergeGeometries([stripAttrs(buildShellGeo()), stripAttrs(rimGeo)])!;
-    this.hull = new THREE.InstancedMesh(hullGeo, outline(0.022), maxCups);
+    this.hull = new THREE.InstancedMesh(hullGeo, outline(0.022, undefined, 'inst'), maxCups);
     this.hull.renderOrder = 6;
-    this.rim = new THREE.InstancedMesh(rimGeo, toon(palette.cupRim), maxCups);
+    this.rim = new THREE.InstancedMesh(rimGeo, toon(palette.cupRim, { use: 'inst' }), maxCups);
 
     // Sealed film: a thin lens-shaped disc on top.
     const lidGeo = sphere(1, 16, 5);
     lidGeo.scale(CUP.RT * 1.02, 0.045, CUP.RT * 1.02);
     lidGeo.translate(0, CUP.H, 0);
-    this.lid = new THREE.InstancedMesh(lidGeo, toon('#ffffff'), maxCups);
+    this.lid = new THREE.InstancedMesh(lidGeo, toon('#ffffff', { use: 'instColor' }), maxCups);
     this.lid.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxCups * 3), 3);
 
     const strawGeo = cylinder(0.042, 0.042, 0.62, 8);
     strawGeo.translate(0, 0.31, 0);
-    this.straw = new THREE.InstancedMesh(strawGeo, toon('#ffffff'), maxCups);
+    this.straw = new THREE.InstancedMesh(strawGeo, toon('#ffffff', { use: 'instColor' }), maxCups);
     this.straw.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxCups * 3), 3);
-    this.strawHull = new THREE.InstancedMesh(strawGeo, outline(0.016), maxCups);
+    this.strawHull = new THREE.InstancedMesh(strawGeo, outline(0.016, undefined, 'inst'), maxCups);
 
     const foamGeo = sphere(1, 12, 5);
     foamGeo.scale(CUP.RT * 0.88, 0.07, CUP.RT * 0.88);
     this.foamCap = new THREE.InstancedMesh(foamGeo, toon(palette.foam), maxCups);
 
-    this.spheres = new THREE.InstancedMesh(sphere(1, 7, 5), toon('#ffffff'), maxToppings);
+    this.spheres = new THREE.InstancedMesh(sphere(1, 7, 5), toon('#ffffff', { use: 'instColor' }), maxToppings);
     this.spheres.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxToppings * 3), 3);
-    this.cubes = new THREE.InstancedMesh(roundedBox(2, 2, 2, 0.45, 1), toon('#ffffff'), maxToppings);
+    this.cubes = new THREE.InstancedMesh(roundedBox(2, 2, 2, 0.45, 1), toon('#ffffff', { use: 'instColor' }), maxToppings);
     this.cubes.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxToppings * 3), 3);
 
     for (const mesh of [this.liquid, this.shell, this.hull, this.rim, this.lid, this.straw, this.strawHull, this.foamCap, this.spheres, this.cubes]) {
@@ -333,21 +333,19 @@ export class CupRenderer {
 
   end(): void {
     const n = this.n;
-    for (const mesh of [this.liquid, this.shell, this.hull, this.rim]) {
-      mesh.count = n;
-      mesh.instanceMatrix.needsUpdate = true;
+    for (const mesh of [this.liquid, this.shell, this.hull, this.rim]) commitInstances(mesh, n);
+    commitInstances(this.lid, this.nLid);
+    commitInstances(this.straw, this.nStraw);
+    commitInstances(this.strawHull, this.nStraw);
+    commitInstances(this.foamCap, this.nFoam);
+    commitInstances(this.spheres, this.nSph);
+    commitInstances(this.cubes, this.nCube);
+    if (n === 0) return;
+    for (const a of [this.aFill, this.aColA, this.aColB, this.aLayer, this.aTilt, this.aGlow]) {
+      a.clearUpdateRanges();
+      a.addUpdateRange(0, n * a.itemSize);
+      a.needsUpdate = true;
     }
-    this.lid.count = this.nLid;
-    this.straw.count = this.nStraw;
-    this.strawHull.count = this.nStraw;
-    this.foamCap.count = this.nFoam;
-    this.spheres.count = this.nSph;
-    this.cubes.count = this.nCube;
-    for (const mesh of [this.lid, this.straw, this.strawHull, this.foamCap, this.spheres, this.cubes]) {
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    }
-    for (const a of [this.aFill, this.aColA, this.aColB, this.aLayer, this.aTilt, this.aGlow]) a.needsUpdate = true;
   }
 
   get drawn(): number { return this.n; }

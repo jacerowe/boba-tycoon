@@ -22,16 +22,26 @@ export interface BotProfile {
   cardSec: number;
   /** Casual players sometimes wander off to serve a single drink even with capacity. */
   serveEarlyChance: number;
+  /**
+   * Serves in batches instead of filling a big tray first: when `batch` drinks are ready
+   * (`rushBatch` in a rush), when a waiting customer drops below `urgentPatience`, or before
+   * the rush combo timer runs out. 0 turns it off.
+   */
+  batch: number;
+  rushBatch: number;
+  urgentPatience: number;
 }
 
 export const COMPETENT: BotProfile = {
   name: 'competent', reactionSec: 0.3, stepGapSec: 0.05, shake: { perfect: 0.2, great: 0.6, ok: 0.2 }, shakeExtraSec: 0,
   buyUpgrades: true, addToppings: true, cardSec: 1.2, serveEarlyChance: 0,
+  batch: 3, rushBatch: 2, urgentPatience: 0.35,
 };
 
 export const CASUAL: BotProfile = {
   name: 'casual', reactionSec: 0.8, stepGapSec: 0.4, shake: { perfect: 0.02, great: 0.2, ok: 0.78 }, shakeExtraSec: 0.35,
   buyUpgrades: true, addToppings: true, cardSec: 2.5, serveEarlyChance: 0.5,
+  batch: 0, rushBatch: 0, urgentPatience: 0,
 };
 
 export class Bot {
@@ -118,8 +128,8 @@ export class Bot {
     // 1. Keep making the drink in hand.
     if (p.held) return go(sim.nextStationFor(p.held));
 
-    // 2. Buy the cheapest visible upgrade when affordable (between drinks).
-    if (this.profile.buyUpgrades) {
+    // 2. Buy the cheapest visible upgrade when affordable (between drinks, never mid-rush).
+    if (this.profile.buyUpgrades && !sim.world.events.active) {
       const pads = [...shop.pads].sort((a, b) => sim.reg.upgrade(a.upgradeId).cost - sim.reg.upgrade(b.upgradeId).cost);
       for (const pad of pads) {
         const cost = sim.reg.upgrade(pad.upgradeId).cost - pad.paid;
@@ -135,8 +145,20 @@ export class Bot {
     const deliverable = p.stack.filter((d) => queued.some((c) => c.id === d.forCustomer || c.recipeId === d.recipeId));
     const counter = shop.stations.find((s) => sim.reg.station(s.def).role === 'counter')!.id;
 
-    // 3. Deliver when full, or when nothing else is waiting to be made.
-    if (deliverable.length && (p.stack.length >= p.capacity || !unfilled || (this.profile.serveEarlyChance > 0 && this.coin(this.profile.serveEarlyChance, 'early' + p.stack.length)))) {
+    // 3. Deliver when full, or when nothing else is waiting to be made. Good players also serve
+    //    in batches, rescue a customer who's running out of patience, and keep a rush combo alive.
+    const P = this.profile;
+    const w = sim.world;
+    const rushing = w.events.active?.phase === 'active';
+    const batch = rushing ? P.rushBatch : P.batch;
+    const batchReady = batch > 0 && deliverable.length >= batch;
+    const urgent = P.urgentPatience > 0 && deliverable.some((d) => {
+      const c = queued.find((q) => q.id === d.forCustomer);
+      return !!c && c.patience / c.patienceMax < P.urgentPatience;
+    });
+    const comboLow = P.rushBatch > 0 && rushing && w.combo.serves > 0 && w.combo.timer < 3.5;
+    const early = P.serveEarlyChance > 0 && this.coin(P.serveEarlyChance, 'early' + p.stack.length);
+    if (deliverable.length && (p.stack.length >= p.capacity || !unfilled || batchReady || urgent || comboLow || early)) {
       return go(counter);
     }
     // 4. Start the next order.

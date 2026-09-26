@@ -145,10 +145,16 @@ html, body {
 .stag img { width: 32px; height: 32px; }
 .stag .ring { width: 34px; height: 34px; }
 .stag.warn img { animation: bang 500ms ease-in-out infinite alternate; }
+/* Running low / empty: a bubble with a red "!" so it reads at a glance, not just a floating icon. */
+.stag.warn { background: #fff; border: 3px solid var(--ink); border-radius: 16px; padding: 2px 5px; box-shadow: 0 3px 0 var(--ink); }
+.stag.warn::after {
+  content: '!'; position: absolute; right: -9px; top: -9px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--bad); color: #fff; border: 2px solid var(--ink); font: 900 14px/20px var(--font); text-align: center;
+}
 
 /* ---- Callouts, hints, joystick, overlays -------------------------------- */
 .callout {
-  position: absolute; left: 50%; top: 22%; transform: translateX(-50%) scale(0); display: flex; align-items: center; gap: 8px;
+  position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); /* low, clear of the queue and its order bubbles */ transform: translateX(-50%) scale(0); display: flex; align-items: center; gap: 8px;
   background: var(--panel); border: 3px solid var(--ink); border-radius: 20px; padding: 8px 14px; box-shadow: 0 4px 0 var(--ink);
   font-weight: 900; font-size: 18px; max-width: calc(100vw - 24px); flex-wrap: wrap; justify-content: center;
 }

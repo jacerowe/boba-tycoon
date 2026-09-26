@@ -194,6 +194,36 @@ describe('the practice rush', () => {
   });
 });
 
+describe('a Tiny Shop rush', () => {
+  // A well-run shop (every upgrade bought) makes ~5-8 drinks per rush, so x10 (8 serves, no
+  // walkouts) is a peak moment rather than the norm, and x5 is the usual result.
+  it('a competent bot with the shop upgrades reaches x10 in good rushes and x5 in most', () => {
+    const ups = ['carryTray', 'carry3', 'carry5', 'carry8', 'fasterPour', 'fasterSealer', 'biggerPearlPot', 'secondTea', 'pearlAutoRefill', 'fasterShoes', 'extraQueue'];
+    const bests: number[] = [];
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      const sim = Sim.create(seed, reg);
+      send(sim, { type: 'DebugSkipTo', beat: 'shop' });
+      run(sim, 0.2);
+      for (const u of ups) send(sim, { type: 'DebugGiveUpgrade', upgradeId: u });
+      const bot = new Bot(sim, COMPETENT, seed + 21);
+      sim.world.events.lockUntil = 1e9; // only the rush we trigger
+      runBot(sim, bot, { maxSec: 40 }); // settle in: a line forms, pots are stocked
+      send(sim, { type: 'TriggerEvent', eventId: 'rush' });
+      let best = 1, ended = false;
+      runBot(sim, bot, {
+        maxSec: 120,
+        until: () => ended,
+        onTick: (s) => { for (const e of s.events) if (e.type === 'RushEnded') { best = e.results.bestMult; ended = true; } },
+      });
+      expect(ended).toBe(true);
+      bests.push(best);
+    }
+    const msg = 'best multipliers ' + bests.join(', ');
+    expect(bests.filter((b) => b >= 10).length, msg).toBeGreaterThanOrEqual(2);
+    expect(bests.filter((b) => b >= 5).length, msg).toBeGreaterThanOrEqual(6);
+  });
+});
+
 describe('photosensitivity limits', () => {
   it('no flash or flicker is configured faster than 3 Hz, and brightness is capped', () => {
     expect(feel.flash.maxHz).toBeLessThanOrEqual(3);

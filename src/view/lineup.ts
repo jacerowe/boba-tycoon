@@ -36,22 +36,34 @@ export function runLineup(container: HTMLElement): void {
   const sun = new THREE.DirectionalLight(palette.sun, 2.3);
   sun.position.set(-4, 8, 6);
   scene.add(sun);
-  // A cute counter to stand them on.
-  const b = new MeshBuilder();
-  b.add(roundedBox(9.5, 0.3, 3.2, 0.1), palette.cartWood, [0, -0.15, 0.2]);
-  b.add(roundedBox(9.7, 0.08, 3.4, 0.04), palette.cartTrim, [0, 0.02, 0.2]);
-  b.add(roundedBox(9.5, 1.4, 0.2, 0.08), palette.cartBody, [0, -0.9, 1.75]);
-  scene.add(b.mesh(0.03));
+  // A cute counter to stand them on: wide for landscape, deep for portrait.
+  const counter = (w: number, d: number) => {
+    const b = new MeshBuilder();
+    b.add(roundedBox(w, 0.3, d, 0.1), palette.cartWood, [0, -0.15, 0.2]);
+    b.add(roundedBox(w + 0.2, 0.08, d + 0.2, 0.04), palette.cartTrim, [0, 0.02, 0.2]);
+    b.add(roundedBox(w, 1.4, 0.2, 0.08), palette.cartBody, [0, -0.9, 0.2 + d / 2 + 0.05]);
+    const mesh = b.mesh(0.03);
+    scene.add(mesh);
+    return mesh;
+  };
+  const wide = counter(9.5, 3.2);
+  const deep = counter(5.4, 5.6);
   const cups = new CupRenderer(16, 400);
   scene.add(cups.group);
   const particles = new Particles(400);
   scene.add(particles.mesh);
   const visuals = LINEUP.map((d, i) => new DrinkVisual(reg, { recipeId: d.recipe, next: d.sealed ? reg.recipe(d.recipe).steps.length - 1 : reg.recipe(d.recipe).steps.indexOf('shake') + 1, quality: d.q, sealed: d.sealed, seed: 100 + i * 37 }));
-  const slots = LINEUP.map((_, i) => {
-    const row = i < 5 ? 0 : 1;
-    const col = i % 5;
-    return new THREE.Vector3((col - 2) * 1.6 + (row ? 0.5 : -0.3), 0.09, row ? 0.95 : -0.45);
-  });
+  // Landscape: two rows of five. Portrait: four short rows (2-3-3-2) so every drink fits the width.
+  const layout = (rows: number[], dx: number, dz: number, stagger: number) => {
+    const out: THREE.Vector3[] = [];
+    rows.forEach((n, r) => {
+      for (let c = 0; c < n; c++) out.push(new THREE.Vector3((c - (n - 1) / 2) * dx + (r % 2 ? stagger : -stagger), 0.09, 0.2 + (r - (rows.length - 1) / 2) * dz));
+    });
+    return out;
+  };
+  const wideSlots = layout([5, 5], 1.6, 1.4, 0.4);
+  const deepSlots = layout([2, 3, 3, 2], 1.5, 1.25, 0.2);
+  let slots = wideSlots;
   const m = new THREE.Matrix4();
   const s = new THREE.Vector3(2.2, 2.2, 2.2);
   const q = new THREE.Quaternion();
@@ -61,8 +73,11 @@ export function runLineup(container: HTMLElement): void {
     renderer.setSize(w, h);
     cam.aspect = w / h;
     const portrait = w < h;
-    cam.position.set(0, portrait ? 9.5 : 5.9, portrait ? 15.5 : 11.2);
-    cam.lookAt(0, 0.62, 0.25);
+    slots = portrait ? deepSlots : wideSlots;
+    wide.visible = !portrait;
+    deep.visible = portrait;
+    cam.position.set(0, portrait ? 8.6 : 5.9, portrait ? 11.8 : 11.2);
+    cam.lookAt(0, portrait ? 0.4 : 0.62, 0.25);
     cam.fov = portrait ? 40 : 32;
     cam.updateProjectionMatrix();
   };

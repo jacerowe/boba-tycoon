@@ -78,23 +78,18 @@ export class PlayerView {
     // Head
     this.head = new THREE.Group();
     this.head.position.set(0, 1.08, 0);
-    const skull = outlined(sphere(0.35, 22, 16), skin, 0.032);
-    this.head.add(skull);
+    // Skull, ears and cap move as one piece: one mesh + one outline (2 draw calls, not 8).
     const hb = new MeshBuilder();
+    hb.add(sphere(0.35, 22, 16), skin);
+    hb.add(sphere(0.08, 10, 8), skin, [-0.34, -0.02, 0]);
+    hb.add(sphere(0.08, 10, 8), skin, [0.34, -0.02, 0]);
     // A little visor cap: a dome on the crown, a brim over the eyes, a boba button on top.
     const dome = new THREE.SphereGeometry(0.33, 18, 8, 0, Math.PI * 2, 0, Math.PI * 0.42);
     hb.add(dome, palette.playerCap, [0, 0.1, -0.02], [-0.25, 0, 0]);
     hb.add(cylinder(0.2, 0.21, 0.03, 18), palette.playerCap, [0, 0.24, 0.24], [0.42, 0, 0], [1, 1, 0.75]);
     hb.add(sphere(0.06, 8, 6), '#ffffff', [0, 0.42, -0.08]);
     hb.add(sphere(0.06, 10, 8), palette.cartTrim, [0.0, 0.33, 0.18], [0, 0, 0], [1, 1, 0.45]);
-    const cap = hb.mesh(0.028);
-    this.head.add(cap);
-    // ears
-    const earL = outlined(sphere(0.08, 10, 8), skin, 0.02);
-    earL.position.set(-0.34, -0.02, 0);
-    const earR = earL.clone();
-    earR.position.x = 0.34;
-    this.head.add(earL, earR);
+    this.head.add(hb.mesh(0.03));
     // face
     this.faceTex = playerFaceAtlas().clone();
     this.faceTex.needsUpdate = true;

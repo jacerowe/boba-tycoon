@@ -43,10 +43,17 @@ function addRim(mat: THREE.Material): void {
   mat.customProgramCacheKey = () => 'toonRim';
 }
 
+/**
+ * What kind of mesh a cached material serves. three.js keys programs on instancing and
+ * instance colours, so one material shared by a Mesh and an InstancedMesh re-resolves its
+ * program on every draw. Each use gets its own material object; the programs stay shared.
+ */
+export type MatUse = 'mesh' | 'inst' | 'instColor';
+
 const toonCache = new Map<string, THREE.MeshToonMaterial>();
 
-export function toon(color: THREE.ColorRepresentation, opts: { vertexColors?: boolean; transparent?: boolean; opacity?: number; emissive?: THREE.ColorRepresentation; side?: THREE.Side } = {}): THREE.MeshToonMaterial {
-  const key = `${new THREE.Color(color).getHexString()}|${opts.vertexColors ? 1 : 0}|${opts.transparent ? opts.opacity : 1}|${opts.emissive ?? ''}|${opts.side ?? 0}`;
+export function toon(color: THREE.ColorRepresentation, opts: { vertexColors?: boolean; transparent?: boolean; opacity?: number; emissive?: THREE.ColorRepresentation; side?: THREE.Side; use?: MatUse } = {}): THREE.MeshToonMaterial {
+  const key = `${new THREE.Color(color).getHexString()}|${opts.vertexColors ? 1 : 0}|${opts.transparent ? opts.opacity : 1}|${opts.emissive ?? ''}|${opts.side ?? 0}|${opts.use ?? 'mesh'}`;
   const hit = toonCache.get(key);
   if (hit) return hit;
   const m = new THREE.MeshToonMaterial({
@@ -66,8 +73,8 @@ export function toon(color: THREE.ColorRepresentation, opts: { vertexColors?: bo
 const outlineCache = new Map<string, THREE.MeshBasicMaterial>();
 
 /** Inverted hull outline: back faces pushed out along the normal. Works with InstancedMesh. */
-export function outline(thickness = 0.03, color: THREE.ColorRepresentation = palette.outline): THREE.MeshBasicMaterial {
-  const key = `${thickness}|${new THREE.Color(color).getHexString()}`;
+export function outline(thickness = 0.03, color: THREE.ColorRepresentation = palette.outline, use: MatUse = 'mesh'): THREE.MeshBasicMaterial {
+  const key = `${thickness}|${new THREE.Color(color).getHexString()}|${use}`;
   const hit = outlineCache.get(key);
   if (hit) return hit;
   const m = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
@@ -83,8 +90,8 @@ export function outline(thickness = 0.03, color: THREE.ColorRepresentation = pal
 }
 
 const basicCache = new Map<string, THREE.MeshBasicMaterial>();
-export function flat(color: THREE.ColorRepresentation, opts: { transparent?: boolean; opacity?: number; depthWrite?: boolean; side?: THREE.Side } = {}): THREE.MeshBasicMaterial {
-  const key = `${new THREE.Color(color).getHexString()}|${opts.transparent ? 1 : 0}|${opts.opacity ?? 1}|${opts.depthWrite ?? true}|${opts.side ?? 0}`;
+export function flat(color: THREE.ColorRepresentation, opts: { transparent?: boolean; opacity?: number; depthWrite?: boolean; side?: THREE.Side; use?: MatUse } = {}): THREE.MeshBasicMaterial {
+  const key = `${new THREE.Color(color).getHexString()}|${opts.transparent ? 1 : 0}|${opts.opacity ?? 1}|${opts.depthWrite ?? true}|${opts.side ?? 0}|${opts.use ?? 'mesh'}`;
   const hit = basicCache.get(key);
   if (hit) return hit;
   const m = new THREE.MeshBasicMaterial({ color, transparent: !!opts.transparent, opacity: opts.opacity ?? 1, depthWrite: opts.depthWrite ?? true, side: opts.side ?? THREE.FrontSide });
@@ -110,8 +117,9 @@ export function blobShadowTexture(): THREE.Texture {
   return blobTex;
 }
 
-let shadowMat: THREE.MeshBasicMaterial | null = null;
-export function blobShadowMaterial(): THREE.MeshBasicMaterial {
-  if (!shadowMat) shadowMat = new THREE.MeshBasicMaterial({ map: blobShadowTexture(), transparent: true, depthWrite: false });
-  return shadowMat;
+const shadowMats = new Map<MatUse, THREE.MeshBasicMaterial>();
+export function blobShadowMaterial(use: MatUse = 'mesh'): THREE.MeshBasicMaterial {
+  let m = shadowMats.get(use);
+  if (!m) { m = new THREE.MeshBasicMaterial({ map: blobShadowTexture(), transparent: true, depthWrite: false }); shadowMats.set(use, m); }
+  return m;
 }

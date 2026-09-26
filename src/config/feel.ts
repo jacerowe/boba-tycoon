@@ -107,8 +107,12 @@ export const feel = {
     distance: { cart: 12, tinyShop: 17 } as Record<string, number>,
     /** Keep this many metres of world visible across the narrow axis per stage. */
     frameWidth: { cart: 7.1, tinyShop: 9.8 } as Record<string, number>,
-    /** Landscape: metres of ground depth to keep visible vertically. */
-    frameDepth: { cart: 10.5, tinyShop: 14 } as Record<string, number>,
+    /** Landscape: metres of ground depth to keep visible vertically (the line of customers included). */
+    frameDepth: { cart: 13, tinyShop: 16 } as Record<string, number>,
+    /** Landscape: never frame wider than this many times the portrait width fit (ultra-wide screens). */
+    landscapeWidthCap: 3,
+    /** Landscape: nudge the frame toward the street so the queue and its order bubbles stay on screen. */
+    landscapeFocusZ: { cart: -0.9, tinyShop: -0.6 } as Record<string, number>,
     /** Follow spring (critically damped-ish). */
     followStiffness: 40,
     followDamping: 12,

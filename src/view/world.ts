@@ -232,7 +232,7 @@ export class World {
     const tileData: { x: number; z: number; delay: number }[] = [];
     for (let x = minX + 0.5; x < maxX; x += 1) for (let z = minZ + 0.5; z < maxZ; z += 1) tileData.push({ x, z, delay: Math.hypot(x, z + 1.5) * 0.06 });
     const tileGeo = new THREE.BoxGeometry(0.98, 0.06, 0.98);
-    const tiles = new THREE.InstancedMesh(tileGeo, toon('#ffffff'), tileData.length);
+    const tiles = new THREE.InstancedMesh(tileGeo, toon('#ffffff', { use: 'instColor' }), tileData.length);
     tiles.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(tileData.length * 3), 3);
     const ca = new THREE.Color(palette.shopFloorA), cb = new THREE.Color(palette.shopFloorB);
     tileData.forEach((t, i) => tiles.setColorAt(i, (Math.floor(t.x - minX) + Math.floor(t.z - minZ)) % 2 ? ca : cb));

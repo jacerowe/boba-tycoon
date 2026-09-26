@@ -24,7 +24,12 @@ export function pressable(b: HTMLElement): void {
 
 interface Word { el: HTMLDivElement; x: number; y: number; t: number; life: number; rot: number; rise: number; big: boolean; fit: number }
 
-export interface BubbleView { root: HTMLDivElement; img: HTMLImageElement; mood: HTMLImageElement; ring: SVGCircleElement; recipe: string; moodIdx: number; pop: number }
+export interface BubbleView { root: HTMLDivElement; img: HTMLImageElement; mood: HTMLImageElement; ring: SVGCircleElement; recipe: string; moodIdx: number; pop: number; dash: string; stroke: number; claimed: boolean; xf: string }
+
+/** Transform for a label anchored bottom-centre at (x, y). Rounded, so a label that didn't move gives an equal string. */
+export function placeTransform(x: number, y: number, scale = 1): string {
+  return `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%) scale(${scale.toFixed(3)})`;
+}
 
 export class Overlay {
   readonly root: HTMLElement;
@@ -295,7 +300,7 @@ export class Overlay {
     root.appendChild(svg);
     const mood = el('img', 'mood', root);
     mood.alt = '';
-    return { root, img, mood, ring, recipe: '', moodIdx: -1, pop: 0 };
+    return { root, img, mood, ring, recipe: '', moodIdx: -1, pop: 0, dash: '', stroke: -1, claimed: false, xf: '' };
   }
 
   removeBubble(b: BubbleView): void { b.root.remove(); }
@@ -322,7 +327,7 @@ export class Overlay {
   }
 
   place(e: HTMLElement, x: number, y: number, scale = 1): void {
-    e.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%) scale(${scale.toFixed(3)})`;
+    e.style.transform = placeTransform(x, y, scale);
   }
 
   /** Coins burst out of a point and fly into the cash counter (the counter ticks as each lands). */

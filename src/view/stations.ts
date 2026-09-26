@@ -404,6 +404,7 @@ export class StationView {
     body.rotation.z = this.wiggle.x * 0.04;
     const gm = this.glow.material as THREE.MeshBasicMaterial;
     gm.opacity = this.glowK * (0.55 + 0.25 * Math.sin(this.t * 7));
+    this.glow.visible = this.glowK > 0.002; // an invisible ring still costs a draw
     this.glow.scale.setScalar(1 + 0.08 * Math.sin(this.t * 7));
     this.arrow.visible = this.showArrow && this.glowK > 0.5;
     if (this.arrow.visible) {

@@ -18,18 +18,19 @@ Every number lives in one of three files. Numbers are starting values: change th
 
 | Knob | Default | What it does |
 |---|---|---|
-| `balance.upgrades.tinyShop.cost` | 375 | How long the cart phase lasts. Bots: competent 8.3–9.2 min, casual 14.1–14.6 min. |
-| `balance.patience.baseSec.cart` | 40 | Seconds before a waiting customer walks out. Lower = more pressure and walkouts. |
+| `balance.upgrades.tinyShop.cost` | 375 | How long the cart phase lasts. Bots: competent 8.1–9.0 min, casual 13.6–14.3 min. |
+| `balance.patience.baseSec` | cart 40, shop 52 | Seconds before a waiting customer walks out. Lower = more pressure and walkouts. |
 | `balance.traffic.perMinute.cart` | 5.2 | Customers per minute at 3★ (reputation scales it 0.55×–1.6×). |
-| `balance.rush.speedMult` | 1.5 | World speed during a rush (customers, brewing, spawns, steps). Player uses `playerSpeedMult` 1.35, patience `patienceDrainMult` 1.6. |
+| `balance.rush.speedMult` | 1.5 | World speed during a rush (customers, brewing, spawns, steps). Player uses `playerSpeedMult` 1.35, patience `patienceDrainMult` 1.4. |
 | `balance.combo.timerSec` | 8 | Combo timer; each serve refills it, PERFECT adds `perfectBonusSec`. |
-| `balance.combo.tables` | practice 2/4/6, cart 2/4/7/12, shop 3/6/10/15 | Serves that reach x2/x3/x5/x10. |
+| `balance.combo.tables` | practice 2/4/6, cart 2/4/7/12, shop 2/4/6/8 | Serves that reach x2/x3/x5/x10. |
 | `balance.rush.minGapSec` / `baseChancePerSec` / `chanceRampPerSec` | 70 / 0.004 / 0.0004 | How often random rushes happen once eligible. |
 | `feel.shake.windowSec` | 1.6 | Scoring window from the first reversal. |
 | `feel.shake.greatAt` / `perfectAt` | 4 / 8 | Reversals for GREAT and PERFECT. PERFECT also needs 70% of intervals within ±35% of 5 reversals/s. |
 | `feel.shake.idleGraceSec` | 1.5 | Seconds to start shaking before it resolves OK on its own. |
 | `feel.move.speed` | 5.4 | Player top speed (m/s). `accelSec` 0.09 / `decelSec` 0.07 keep it snappy. |
-| `feel.camera.frameWidth` | cart 7.1, shop 9.8 | Metres visible across a portrait screen; `frameDepth` does the same for landscape. |
+| `feel.camera.frameWidth` | cart 7.1, shop 9.8 | Metres visible across a portrait screen. |
+| `feel.camera.frameDepth` | cart 13, shop 16 | Metres of ground depth visible on a landscape screen; `landscapeFocusZ` (cart −0.9, shop −0.6) leans the frame toward the queue. |
 | `feel.camera.backLimitZ` | cart 8.4, shop 8.2 | Furthest world z the bottom screen edge may show. Lower it to push the view further toward the street. |
 | `feel.juice.hitStop` | 50–80 ms | Freeze frames on seal, PERFECT, combo tier-up, COMBO BROKEN, purchase. |
 | `feel.juice.trauma` | 0.1–0.6 | Screen shake per event (shake = trauma²). |

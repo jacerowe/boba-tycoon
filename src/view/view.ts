@@ -21,9 +21,10 @@ import { Particles } from './particles';
 import { Coins } from './coins';
 import { SPRITE, FACE, PLAYER_FACE } from './textures';
 import { Spring, Squasher, Tweener, ease, lerpAngle } from './juice';
-import { cylinder, torus } from './geometry';
+import { cylinder, torus, commitInstances } from './geometry';
 import { iconCanvas, iconUrl } from '../ui/icons';
 import type { Overlay, BubbleView } from '../ui/overlay';
+import { placeTransform } from '../ui/overlay';
 import { S } from '../ui/strings';
 import { padPos } from '../sim/upgrades';
 import type { Sfx } from '../audio/sfx';
@@ -123,7 +124,7 @@ export class GameView {
     this.player = new PlayerView(this.particles);
     this.scene.add(this.player.root);
     const dotGeo = cylinder(0.07, 0.07, 0.02, 10);
-    this.routeDots = new THREE.InstancedMesh(dotGeo, flat(palette.routeDot), 160);
+    this.routeDots = new THREE.InstancedMesh(dotGeo, flat(palette.routeDot, { use: 'inst' }), 160);
     this.routeDots.count = 0;
     this.routeDots.frustumCulled = false;
     this.scene.add(this.routeDots);
@@ -177,7 +178,14 @@ export class GameView {
     }
   }
 
+  /** Canvas size in CSS px, cached on resize: reading clientWidth per projection forces a layout every call. */
+  private claimedNow = new Set<number>();
+  private cssW = window.innerWidth;
+  private cssH = window.innerHeight;
+
   resize(w: number, h: number): void {
+    this.cssW = w;
+    this.cssH = h;
     this.renderer.setSize(w, h, false);
     this.rig.resize(w, h);
   }
@@ -198,9 +206,8 @@ export class GameView {
   // ---- Helpers ------------------------------------------------------------------
   project(v: THREE.Vector3, out = { x: 0, y: 0, vis: true }): { x: number; y: number; vis: boolean } {
     tmpV.copy(v).project(this.rig.camera);
-    const el = this.renderer.domElement;
-    out.x = (tmpV.x * 0.5 + 0.5) * el.clientWidth;
-    out.y = (-tmpV.y * 0.5 + 0.5) * el.clientHeight;
+    out.x = (tmpV.x * 0.5 + 0.5) * this.cssW;
+    out.y = (-tmpV.y * 0.5 + 0.5) * this.cssH;
     out.vis = tmpV.z < 1 && tmpV.z > -1;
     return out;
   }
@@ -302,7 +309,7 @@ export class GameView {
         O.setVignette(true);
         O.showShake(true);
         this.sfx.shakeStart();
-        this.wordAt(S.shake, this.cupWorldPos(tmpV2).setY(2.2), 'big');
+        this.wordAt(S.shake, this.cupWorldPos(tmpV2).setY(3.3), 'big'); // above the lifted hero cup, not across it
         this.firstShakeHint = e.generous;
         break;
       }
@@ -745,6 +752,7 @@ export class GameView {
     this.chars.begin();
     this.cups.begin(this.time);
     const alive = new Set<number>();
+    this.claimedNow = this.sim.claimedCustomers();
     for (const c of sim.world.customers) {
       alive.add(c.id);
       const v = this.custView(c);
@@ -978,8 +986,7 @@ export class GameView {
         from = to;
       }
     }
-    this.routeDots.count = n;
-    this.routeDots.instanceMatrix.needsUpdate = true;
+    commitInstances(this.routeDots, n);
     // Numbered pips at queued stations.
     while (this.pipEls.length < pts.length) {
       const e = document.createElement('div');
@@ -1058,12 +1065,14 @@ export class GameView {
       b.moodIdx = c.mood;
       b.mood.src = iconUrl(['faceHappy', 'faceNeutral', 'faceAngry', 'faceFurious'][c.mood], 64);
     }
+    // Touch the DOM only when something changed: per-frame writes cost a style recalc each.
     const frac = Math.max(0, c.patience / c.patienceMax);
     const circ = 2 * Math.PI * 15;
-    b.ring.setAttribute('stroke-dasharray', `${(circ * frac).toFixed(1)} ${circ.toFixed(1)}`);
-    b.ring.setAttribute('stroke', [palette.uiGood, palette.uiAccent2, '#ff9f43', palette.uiBad][c.mood]);
-    const claimed = this.sim.claimedCustomers().has(c.id);
-    b.root.classList.toggle('claimed', claimed);
+    const dash = `${(circ * frac).toFixed(1)} ${circ.toFixed(1)}`;
+    if (dash !== b.dash) { b.dash = dash; b.ring.setAttribute('stroke-dasharray', dash); }
+    if (b.stroke !== c.mood) { b.stroke = c.mood; b.ring.setAttribute('stroke', [palette.uiGood, palette.uiAccent2, '#ff9f43', palette.uiBad][c.mood]); }
+    const claimed = this.claimedNow.has(c.id);
+    if (claimed !== b.claimed) { b.claimed = claimed; b.root.classList.toggle('claimed', claimed); }
     b.pop = Math.min(1, b.pop + 1 / 12);
     // Size bubbles by how big a metre looks on screen, so crowded shop lines don't pile up.
     const a0 = this.project(tmpV.set(v.x - 0.5, 1.5, v.z)), a1 = this.project(tmpV2.set(v.x + 0.5, 1.5, v.z));
@@ -1072,7 +1081,8 @@ export class GameView {
     const s = ease.outBack(b.pop) * (c.scripted === 'tutorial' ? 1.15 : 1) * fit;
     const lift = c.queueIndex >= 0 && c.queueIndex % 2 === 1 ? 0.55 : 0;
     const p = this.project(tmpV.set(v.x, (1.62 + v.hop) * v.look.height + 0.35 + lift, v.z));
-    this.overlay.place(b.root, p.x, p.y, s);
+    const xf = placeTransform(p.x, p.y, s);
+    if (xf !== b.xf) { b.xf = xf; b.root.style.transform = xf; }
   }
 
   // ---- Picking (for input) ---------------------------------------------------------
@@ -1103,8 +1113,7 @@ export class GameView {
   }
 
   pickGround(x: number, y: number): { x: number; z: number } | null {
-    const el = this.renderer.domElement;
-    this.ndc.set((x / el.clientWidth) * 2 - 1, -(y / el.clientHeight) * 2 + 1);
+    this.ndc.set((x / this.cssW) * 2 - 1, -(y / this.cssH) * 2 + 1);
     this.ray.setFromCamera(this.ndc, this.rig.camera);
     const hit = new THREE.Vector3();
     return this.ray.ray.intersectPlane(this.groundPlane, hit) ? { x: hit.x, z: hit.z } : null;
