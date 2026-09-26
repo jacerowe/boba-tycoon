@@ -144,7 +144,7 @@ void main() {
   float stripe2 = smoothstep(0.96, 0.995, dot(n, normalize(vec3(0.55, 0.1, 0.83))));
   float pulse = 0.75 + 0.25 * sin(uTime * 5.0 + vY * 18.0);
   vec3 col = mix(vec3(1.0), uGold, clamp(vGlow * (0.35 + fres) * pulse, 0.0, 1.0));
-  float a = 0.1 + fres * 0.5 + stripe * 0.65 + stripe2 * 0.35 + vGlow * 0.25 * fres;
+  float a = 0.05 + fres * 0.42 + stripe * 0.6 + stripe2 * 0.3 + vGlow * 0.25 * fres;
   if (!gl_FrontFacing) a *= 0.45;
   gl_FragColor = vec4(col, clamp(a, 0.0, 0.92));
   #include <colorspace_fragment>

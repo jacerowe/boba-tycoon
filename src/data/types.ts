@@ -44,6 +44,8 @@ export interface RecipeDef {
   popularity: number;
   /** Straw color index into palette.strawColors. */
   straw: number;
+  /** Price for data-only / player recipes. Builtins take theirs from balance.prices. */
+  price?: number;
 }
 
 export type StationRole = 'cup' | 'ingredient' | 'shaker' | 'sealer' | 'counter' | 'bin' | 'menuBoard';

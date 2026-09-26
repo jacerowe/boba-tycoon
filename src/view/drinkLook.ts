@@ -109,8 +109,8 @@ export function computeLook(reg: Registry, d: LookInput, out: CupLook = emptyLoo
   if (d.quality) {
     out.soft = 0.12;
     out.swirl *= 0.35;
-    if (d.quality === 'great') out.foam = 0.13;
-    if (d.quality === 'perfect') { out.foam = 0.16; out.glow = 1; }
+    if (d.quality === 'great') out.foam = 0.1;
+    if (d.quality === 'perfect') { out.foam = 0.12; out.glow = 1; }
   }
   if (d.sealed) {
     if (d.quality === 'perfect') out.lidColor.set('#ffd34f');

@@ -50,7 +50,7 @@ export function runLineup(container: HTMLElement): void {
   const slots = LINEUP.map((_, i) => {
     const row = i < 5 ? 0 : 1;
     const col = i % 5;
-    return new THREE.Vector3((col - 2) * 1.55 + (row ? 0.55 : -0.2), 0.06, row ? 0.95 : -0.4);
+    return new THREE.Vector3((col - 2) * 1.6 + (row ? 0.5 : -0.3), 0.09, row ? 0.95 : -0.45);
   });
   const m = new THREE.Matrix4();
   const s = new THREE.Vector3(2.2, 2.2, 2.2);
@@ -61,9 +61,9 @@ export function runLineup(container: HTMLElement): void {
     renderer.setSize(w, h);
     cam.aspect = w / h;
     const portrait = w < h;
-    cam.position.set(0, portrait ? 7.2 : 4.6, portrait ? 11.5 : 7.4);
-    cam.lookAt(0, 0.55, 0.2);
-    cam.fov = portrait ? 36 : 30;
+    cam.position.set(0, portrait ? 9.5 : 5.9, portrait ? 15.5 : 11.2);
+    cam.lookAt(0, 0.62, 0.25);
+    cam.fov = portrait ? 40 : 32;
     cam.updateProjectionMatrix();
   };
   window.addEventListener('resize', resize);

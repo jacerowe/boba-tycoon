@@ -113,7 +113,8 @@ export class InputController {
       else this.shake.add(e.timeStamp || performance.now(), e.clientX, e.clientY);
       return;
     }
-    if (this.mode !== 'normal' || e.pointerId !== this.pointerId) return;
+    if (this.mode !== 'normal') return;
+    if (e.pointerId !== this.pointerId) return;
     const dx = e.clientX - this.start.x, dy = e.clientY - this.start.y;
     if (!this.joy && Math.hypot(dx, dy) > feel.ui.tapSlopPx) {
       this.joy = true;

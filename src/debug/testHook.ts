@@ -1,4 +1,5 @@
 // window.__boba: the test/debug hook (with ?debug=1 and in dev builds).
+import * as THREE from 'three';
 import type { Game } from '../game';
 import type { Quality } from '../data/types';
 import { BEATS } from '../data/beats';
@@ -79,8 +80,7 @@ export function installTestHook(game: Game): BobaHook {
     events() { return game.eventLog; },
     commands() { return game.commandLog; },
     project(x, y, z) {
-      const v = { x, y, z } as unknown as import('three').Vector3;
-      const p = game.view.project(new (Object.getPrototypeOf(game.view.rig.camera.position).constructor)(v.x, v.y, v.z));
+      const p = game.view.project(new THREE.Vector3(x, y, z));
       return { x: p.x, y: p.y };
     },
     stationScreen(id) {

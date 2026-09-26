@@ -41,7 +41,7 @@ export class Registry {
     for (const u of data.upgrades) this.upgrades.set(u.id, u);
     for (const e of data.events) this.events.set(e.id, e);
     for (const d of data.districts) this.districts.set(d.id, d);
-    for (const r of data.recipes) this.prices.set(r.id, balance.prices[r.id] ?? NaN);
+    for (const r of data.recipes) this.prices.set(r.id, balance.prices[r.id] ?? r.price ?? NaN);
     validate(this);
   }
 
@@ -123,7 +123,7 @@ export function validate(reg: Registry): void {
   }
   for (const r of reg.recipes.values()) {
     validateRecipe(reg, r);
-    if (!Number.isFinite(reg.prices.get(r.id))) fail(`recipe ${r.id}: no price in balance.prices`);
+    if (!Number.isFinite(reg.prices.get(r.id))) fail(`recipe ${r.id}: no price (balance.prices or recipe.price)`);
   }
   const stageSlotIds = new Set<string>();
   for (const s of reg.stages.values()) {

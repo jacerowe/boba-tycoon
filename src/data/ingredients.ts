@@ -4,11 +4,11 @@ import { palette } from '../config/style';
 export const INGREDIENTS: IngredientDef[] = [
   {
     id: 'tea', name: 'Black tea', kind: 'base', stationDef: 'tea', color: palette.tea, stepKey: 'tea', word: 'POUR!',
-    visual: { type: 'pour', fill: 0.66 },
+    visual: { type: 'pour', fill: 0.72 },
   },
   {
     id: 'milk', name: 'Milk', kind: 'liquid', stationDef: 'milk', color: palette.milk, stepKey: 'milk', word: 'swirl!',
-    visual: { type: 'mix', fillAdd: 0.2, mix: 0.5 },
+    visual: { type: 'mix', fillAdd: 0.16, mix: 0.36 },
   },
   {
     id: 'pearls', name: 'Tapioca pearls', kind: 'topping', stationDef: 'pearls', color: palette.pearl, stepKey: 'pearls', word: 'SCOOP!',
@@ -26,7 +26,7 @@ export const INGREDIENTS: IngredientDef[] = [
   },
   {
     id: 'jelly', name: 'Rainbow jelly', kind: 'topping', stationDef: 'jelly', color: palette.jelly[0], stepKey: 'jelly', word: 'JIGGLE!',
-    visual: { type: 'cubes', count: [6, 8], size: 0.06, colors: [...palette.jelly] },
+    visual: { type: 'cubes', count: [7, 9], size: 0.085, colors: [...palette.jelly] },
     stock: { maxKey: 'jellyMax' },
   },
   {

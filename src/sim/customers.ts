@@ -163,7 +163,7 @@ function releaseClaims(sim: Sim, customerId: number): void {
     d.forCustomer = null;
     const claimed = sim.claimedCustomers();
     const next = sim.world.customers
-      .filter((c) => c.phase === 'queued' && c.recipeId === d.recipeId && !claimed.has(c.id))
+      .filter((c) => c.id !== customerId && c.phase === 'queued' && c.recipeId === d.recipeId && !claimed.has(c.id))
       .sort((a, b) => a.orderedAt - b.orderedAt)[0];
     if (next) d.forCustomer = next.id;
     sim.emit({ type: 'DrinkReassigned', drinkId: d.id, customerId: d.forCustomer });

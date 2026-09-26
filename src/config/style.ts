@@ -75,7 +75,7 @@ export const palette = {
   lidPrint: '#ff6f91',
   strawColors: ['#ff6f91', '#6ad8b8', '#ffd166', '#b18ae8', '#7fb6e8'],
   tea: '#d0782a',
-  milk: '#fff8ef',
+  milk: '#fff1dc',
   milkTea: '#e2b07c',
   taro: '#b58af0',
   strawberrySyrup: '#ff6f96',
@@ -84,7 +84,7 @@ export const palette = {
   pearl: '#3b2418',
   pearlShine: '#8a5a3c',
   popping: '#ff3d6e',
-  jelly: ['#6fe39a', '#ffd34f', '#ff8fb1', '#7fc8ff'],
+  jelly: ['#3fdc7e', '#ffc61a', '#ff6f9e', '#4fb4ff'],
   ice: '#e6f7ff',
   sparkle: '#fff27a',
 
