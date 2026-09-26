@@ -27,7 +27,7 @@ const cart: StageDef = {
   name: 'Boba Cart',
   order: 1,
   bounds: { minX: -4.4, maxX: 4.4, minZ: -1.7, maxZ: 5.1 },
-  focus: v(0, 0.2),
+  focus: v(0, -0.3),
   stations: [
     slot('counter', 'counter', v(0, -2.2), v(0, 0), 0.9),
     slot('cup', 'cup', v(-2.35, -1.5), cartCenter),
@@ -64,7 +64,7 @@ const tinyShop: StageDef = {
   name: 'Tiny Boba Shop',
   order: 2,
   bounds: { minX: -6.4, maxX: 6.4, minZ: -1.75, maxZ: 5.95 },
-  focus: v(0, -1.2),
+  focus: v(0, -0.8),
   stations: [
     slot('counter', 'shopCounter', v(0, -2.35), v(0, 0), 0.8),
     slot('cup', 'cup', R(-128), sc),

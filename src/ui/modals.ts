@@ -178,15 +178,18 @@ export class Modals {
       const fill = el('div', 'fill', reset);
       let holdT: number | null = null;
       let start = 0;
+      const held = () => (performance.now() - start) / 1500;
+      const fire = () => { holdT = null; this.close(); opts.onReset(); };
       const step = () => {
-        const k = Math.min(1, (performance.now() - start) / 1500);
+        const k = Math.min(1, held());
         fill.style.width = `${k * 100}%`;
-        if (k >= 1) { holdT = null; this.close(); opts.onReset(); return; }
+        if (k >= 1) { fire(); return; }
         holdT = requestAnimationFrame(step);
       };
       const stop = () => { if (holdT) cancelAnimationFrame(holdT); holdT = null; fill.style.width = '0%'; };
       reset.addEventListener('pointerdown', (e) => { e.preventDefault(); start = performance.now(); holdT = requestAnimationFrame(step); });
-      reset.addEventListener('pointerup', stop);
+      // Judge the hold by the clock on release too, so a slow frame can't swallow a full hold.
+      reset.addEventListener('pointerup', () => { const armed = holdT !== null && held() >= 1; stop(); if (armed) fire(); });
       reset.addEventListener('pointerleave', stop);
       reset.addEventListener('pointercancel', stop);
       const close = button(S.close, 'check', 'btn', card);

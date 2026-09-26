@@ -444,9 +444,11 @@ export class Game {
     if (!r) return;
     this.modalKind = 'results';
     this.modals.results(r, (btn) => {
-      this.send({ type: 'ClaimReward' });
       const rect = btn.getBoundingClientRect();
-      for (let i = 0; i < 10; i++) setTimeout(() => this.overlay.word('●', rect.left + rect.width / 2 + (Math.random() - 0.5) * 80, rect.top, 'gold'), i * 40);
+      const n = Math.max(6, Math.min(16, Math.round(r.bonus / 2)));
+      this.overlay.setCashTarget(this.sim.cash + r.bonus);
+      this.overlay.coinBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, n, r.bonus / n, () => this.sfx.coin());
+      this.send({ type: 'ClaimReward' });
     });
     this.modalKind = 'results';
   }
@@ -572,6 +574,17 @@ export class Game {
   }
 
   stateHash(): string { return hashState(this.sim.state); }
+
+  /** Tests: advance the sim by exactly n ticks right now (pair with debugScale = 0 for a frozen clock). */
+  manualTicks(n: number): void {
+    for (let i = 0; i < n; i++) {
+      this.view.snapshot();
+      this.bot?.step(SIM_DT);
+      this.sim.tick();
+      const evs = this.sim.drainEvents();
+      if (evs.length) this.onEvents(evs);
+    }
+  }
 
   beatList(): string[] { return BEATS.map((b) => b.id); }
 

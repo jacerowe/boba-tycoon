@@ -78,7 +78,14 @@ export class CameraRig {
     // Follow: blend between stage focus and player, with a little look-ahead.
     const w = C.followWeight[this.stageId] ?? 0.5;
     const tx = this.focus.x + (player.x + player.vx * C.lookAhead - this.focus.x) * w;
-    const tz = this.focus.z + (player.z + player.vz * C.lookAhead - this.focus.z) * w;
+    let tz = this.focus.z + (player.z + player.vz * C.lookAhead - this.focus.z) * w;
+    // Stop following once the bottom screen edge would pass the back of the lot.
+    const back = C.backLimitZ[this.stageId];
+    if (back !== undefined) {
+      const vfov = (C.fov * Math.PI) / 180, p = (C.pitchDeg * Math.PI) / 180;
+      const below = this.dist * (Math.cos(p) - Math.sin(p) / Math.tan(p + vfov / 2));
+      tz = Math.min(tz, back - below);
+    }
     const k = C.followStiffness, c = C.followDamping;
     this.vel.x += (-k * (this.target.x - tx) - c * this.vel.x) * dt;
     this.vel.z += (-k * (this.target.z - tz) - c * this.vel.z) * dt;

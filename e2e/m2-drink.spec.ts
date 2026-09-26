@@ -53,7 +53,6 @@ test('M2: swipes make OK, GREAT and PERFECT drinks; tap seals; wallet goes up', 
   await boot(page);
   // PERFECT: on-tempo ~5.5 reversals/s.
   await toShaker(page);
-  await page.waitForTimeout(150);
   await swipe(page, { reversalsPerSec: 5.6, durationSec: 2.1, amplitudePx: 60 });
   let s = await waitFor(page, (st) => st.world.player.task?.kind !== 'shake', 6000);
   expect(s.world.player.held.quality).toBe('perfect');
@@ -64,7 +63,6 @@ test('M2: swipes make OK, GREAT and PERFECT drinks; tap seals; wallet goes up', 
   // GREAT: a decent but slower shake (normal thresholds now).
   await act(page, 'command', { type: 'DebugSpawn', count: 2 });
   await toShaker(page);
-  await page.waitForTimeout(150);
   await swipe(page, { reversalsPerSec: 3.4, durationSec: 2.3, amplitudePx: 60 });
   s = await waitFor(page, (st) => st.world.player.task?.kind !== 'shake', 6000);
   expect(s.world.player.held.quality).toBe('great');

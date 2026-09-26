@@ -22,7 +22,7 @@ export function pressable(b: HTMLElement): void {
   });
 }
 
-interface Word { el: HTMLDivElement; x: number; y: number; t: number; life: number; rot: number; rise: number; big: boolean }
+interface Word { el: HTMLDivElement; x: number; y: number; t: number; life: number; rot: number; rise: number; big: boolean; fit: number }
 
 export interface BubbleView { root: HTMLDivElement; img: HTMLImageElement; mood: HTMLImageElement; ring: SVGCircleElement; recipe: string; moodIdx: number; pop: number }
 
@@ -253,8 +253,15 @@ export class Overlay {
     e.className = 'word chunky ' + cls;
     e.textContent = text;
     this.wordsLayer.appendChild(e);
+    // Keep long words fully on screen: shrink to fit the viewport, then clamp the centre.
+    e.style.transform = 'none';
+    const width = e.offsetWidth;
+    const fit = Math.min(1, (window.innerWidth - 28) / Math.max(1, width));
+    const half = (width * fit) / 2 + 10;
+    x = Math.max(half, Math.min(window.innerWidth - half, x));
+    e.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%) scale(0)`;
     const rot = (Math.random() * 2 - 1) * feel.juice.wordRotDeg;
-    this.words.push({ el: e, x, y, t: 0, life, rot, rise: feel.juice.wordRisePx * (cls.includes('big') ? 1.3 : 1), big: cls.includes('big') });
+    this.words.push({ el: e, x, y, t: 0, life, rot, rise: feel.juice.wordRisePx * (cls.includes('big') ? 1.3 : 1), big: cls.includes('big'), fit });
     if (this.words.length > 24) this.killWord(0);
   }
 
@@ -318,6 +325,30 @@ export class Overlay {
     e.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%) scale(${scale.toFixed(3)})`;
   }
 
+  /** Coins burst out of a point and fly into the cash counter (the counter ticks as each lands). */
+  coinBurst(fromX: number, fromY: number, n: number, amountEach: number, onLand?: () => void): void {
+    const rect = this.cashPill.getBoundingClientRect();
+    const tx = rect.left + 22, ty = rect.top + rect.height / 2;
+    for (let i = 0; i < n; i++) {
+      const c = iconImg('coin', 'fly-coin', 64);
+      this.root.appendChild(c);
+      const a = Math.random() * Math.PI * 2, r = 30 + Math.random() * 50;
+      const mx = fromX + Math.cos(a) * r, my = fromY + Math.sin(a) * r - 30;
+      const t0 = performance.now() + i * 35, dur = 520 + Math.random() * 180;
+      const step = (now: number) => {
+        const k = Math.max(0, Math.min(1, (now - t0) / dur));
+        const burst = Math.min(1, k * 3), home = Math.max(0, (k - 0.33) / 0.67);
+        const e = home * home * home;
+        const bx = fromX + (mx - fromX) * (1 - Math.pow(1 - burst, 3)), by = fromY + (my - fromY) * (1 - Math.pow(1 - burst, 3));
+        const x = bx + (tx - bx) * e, y = by + (ty - by) * e;
+        c.style.transform = `translate3d(${x - 14}px, ${y - 14}px, 0) scale(${1 - e * 0.35})`;
+        if (k < 1) requestAnimationFrame(step);
+        else { c.remove(); this.coinLanded(amountEach); onLand?.(); }
+      };
+      requestAnimationFrame(step);
+    }
+  }
+
   tapRipple(x: number, y: number): void {
     const r = el('div', 'tap-ripple', this.root);
     r.style.left = `${x}px`;
@@ -356,7 +387,7 @@ export class Overlay {
       const k = Math.max(0, (w.t - pop) / (life - pop));
       const y = w.y - w.rise * k;
       const a = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
-      w.el.style.transform = `translate3d(${w.x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%) rotate(${w.rot.toFixed(1)}deg) scale(${s.toFixed(3)})`;
+      w.el.style.transform = `translate3d(${w.x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%) rotate(${w.rot.toFixed(1)}deg) scale(${(s * w.fit).toFixed(3)})`;
       w.el.style.opacity = a.toFixed(3);
     }
     // Edge flash (capped alpha).

@@ -68,6 +68,8 @@ export class InputController {
     if (this.mode === 'normal' && mode !== 'normal') this.endJoystick();
     this.mode = mode;
     if (mode !== 'shake') this.shake.cancel();
+    // Keys pressed or released during shake/seal must not leave a stale move vector behind.
+    if (mode === 'normal') this.emitVec(this.keyVec.x, this.keyVec.z, true);
   }
 
   beginShake(generous: boolean): void {
@@ -191,12 +193,12 @@ export class InputController {
     if (moveKeys.includes(k) || k === ' ' || k === 'enter') e.preventDefault();
     this.hooks.onAnyInput?.();
     if (this.mode === 'shake') {
-      if (k === 'a' || k === 'arrowleft') this.shake.key(-1, performance.now());
-      if (k === 'd' || k === 'arrowright') this.shake.key(1, performance.now());
-      return;
+      if (!e.repeat && (k === 'a' || k === 'arrowleft')) this.shake.key(-1, performance.now());
+      if (!e.repeat && (k === 'd' || k === 'arrowright')) this.shake.key(1, performance.now());
     }
     if (this.mode === 'seal' && (k === ' ' || k === 'enter')) { this.send({ type: 'Seal' }); return; }
     if (e.repeat) return;
+    // Always track held movement keys (even mid-shake) so nothing is lost when the mode ends.
     if (moveKeys.includes(k)) {
       this.keys.add(k);
       this.updateKeyVec();

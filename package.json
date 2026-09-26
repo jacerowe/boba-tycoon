@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "e2e": "playwright test --project=chromium-phone",
     "e2e:all": "playwright test",
-    "icons": "node scripts/gen-icons.mjs"
+    "icons": "node scripts/gen-icons.mjs",
+    "size": "node scripts/check-size.mjs",
+    "shots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"

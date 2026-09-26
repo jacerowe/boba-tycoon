@@ -8,6 +8,8 @@ import { clearSave } from '../save/save';
 export interface BobaHook {
   seed(n: number): void;
   setTimeScale(x: number): void;
+  /** Advance the sim by n fixed ticks immediately (use with setTimeScale(0) for deterministic tests). */
+  tick(n: number): void;
   getState(): unknown;
   hash(): string;
   actions: {
@@ -44,6 +46,7 @@ export function installTestHook(game: Game): BobaHook {
       game.resetSave();
     },
     setTimeScale(x) { game.debugScale = Math.max(0, x); },
+    tick(n) { game.manualTicks(n); },
     getState() { return JSON.parse(JSON.stringify(game.sim.state)); },
     hash() { return game.stateHash(); },
     actions: {

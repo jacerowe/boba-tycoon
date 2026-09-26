@@ -8,6 +8,7 @@ import { tileTexture, signTexture } from './textures';
 import { ease } from './juice';
 import { CharacterRenderer, lookFromSeed, type CharLook } from './characters';
 import { FACE } from './textures';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const LOT = { minX: -7.6, maxX: 7.6, minZ: -7.3, maxZ: 7.8 };
 export const SHOP_BOX = { minX: -7, maxX: 7, minZ: -7.4, maxZ: 6.4 };
@@ -31,7 +32,7 @@ function tree(b: MeshBuilder, x: number, z: number, s = 1): void {
 function bush(b: MeshBuilder, x: number, z: number, s = 1, flower?: string): void {
   b.add(sphere(0.45 * s, 8, 6), palette.grassDark, [x, 0.3 * s, z], [0, 0, 0], [1.3, 0.8, 1]);
   b.add(sphere(0.35 * s, 8, 6), palette.treeLeaf2, [x + 0.3 * s, 0.34 * s, z + 0.1 * s], [0, 0, 0], [1, 0.8, 1]);
-  if (flower) for (let i = 0; i < 4; i++) b.add(sphere(0.07 * s, 6, 5), flower, [x + (i - 1.5) * 0.18 * s, 0.6 * s, z + 0.25 * s]);
+  if (flower) for (let i = 0; i < 4; i++) b.add(sphere(0.07 * s, 5, 3), flower, [x + (i - 1.5) * 0.18 * s, 0.6 * s, z + 0.25 * s]);
 }
 
 function fenceRun(b: MeshBuilder, x0: number, z0: number, x1: number, z1: number): void {
@@ -60,6 +61,10 @@ export class World {
   readonly ghost: THREE.Group;
   readonly bench: THREE.Group;
   readonly forSale: THREE.Group;
+  /** Every FOR SALE sign (across the road + the empty lot next door); tapping one wiggles it. */
+  readonly forSales: THREE.Group[] = [];
+  /** Cart-stage decor (mat under the work ring, planters, flower bed); hidden once the shop is built. */
+  readonly cartDecor = new THREE.Group();
   readonly shop: {
     group: THREE.Group;
     tiles: THREE.InstancedMesh;
@@ -145,6 +150,36 @@ export class World {
     this.forSale.position.set(0, 0, FAR_WALK.z0 - 2.4);
     this.forSale.userData.board = board;
     g.add(this.forSale);
+    this.forSales.push(this.forSale);
+    const next = this.forSale.clone(true);
+    next.userData.board = next.children[1];
+    next.position.set(10.6, 0, -5.2);
+    next.rotation.y = -0.35;
+    g.add(next);
+    this.forSales.push(next);
+
+    // Cart decor: a round mat marks the work area; planters and a flower bed fill the plaza.
+    const mat = new THREE.Mesh(new THREE.CircleGeometry(3.05, 40).rotateX(-Math.PI / 2), flat('#fff0e2'));
+    mat.position.set(0, 0.008, 0.85);
+    mat.scale.set(1.12, 1, 0.92);
+    const matRim = new THREE.Mesh(new THREE.RingGeometry(3.05, 3.2, 40).rotateX(-Math.PI / 2), flat(palette.cartMint));
+    matRim.position.copy(mat.position);
+    matRim.scale.copy(mat.scale);
+    this.cartDecor.add(mat, matRim);
+    const d = new MeshBuilder();
+    const planter = (x: number, z: number, flower: string) => {
+      d.add(cylinder(0.32, 0.26, 0.42, 14), palette.cartBody, [x, 0.21, z]);
+      d.add(cylinder(0.34, 0.34, 0.06, 14), palette.cartTrim, [x, 0.42, z]);
+      d.add(sphere(0.34, 8, 5), palette.treeLeaf, [x, 0.62, z], [0, 0, 0], [1, 0.8, 1]);
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; d.add(sphere(0.07, 5, 3), flower, [x + Math.cos(a) * 0.22, 0.8, z + Math.sin(a) * 0.22]); }
+    };
+    planter(-4.95, 3.4, palette.flower[0]);
+    planter(4.95, 3.4, palette.flower[2]);
+    planter(-5.4, -2.6, palette.flower[1]);
+    planter(5.4, -2.6, palette.flower[0]);
+    for (let x = -6.4; x <= 6.4; x += 1.6) bush(d, x, 6.9 + (Math.abs(x * 3) % 2) * 0.2, 0.75, palette.flower[Math.abs(Math.round(x * 7)) % 3]);
+    this.cartDecor.add(d.mesh(0.028));
+    g.add(this.cartDecor);
 
     // Ghost outline of the future shop around the cart.
     this.ghost = new THREE.Group();
@@ -317,16 +352,67 @@ export class World {
     return { group, tiles, tileData, walls, roof, sign, interior, seating };
   }
 
+  private baked: THREE.Group | null = null;
+  private tileScale = new THREE.Vector3();
+
+  /**
+   * Once built, the shop never animates again: bake walls, roof, interior and floor tiles into
+   * two static meshes (one outlined, one flat) instead of ~16 draw calls.
+   */
+  private bake(): void {
+    const s = this.shop;
+    if (!this.baked) {
+      s.group.updateMatrixWorld(true);
+      const inv = new THREE.Matrix4().copy(s.group.matrixWorld).invert();
+      const parts: THREE.BufferGeometry[] = [];
+      const collect = (root: THREE.Object3D) => root.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh || o.name === 'outline' || (o as THREE.InstancedMesh).isInstancedMesh || !m.geometry.attributes.color) return;
+        const g = m.geometry.clone();
+        g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld));
+        parts.push(g);
+      });
+      for (const w of s.walls) collect(w);
+      collect(s.roof);
+      for (const o of s.interior) collect(o);
+      const b = new MeshBuilder();
+      const box = new THREE.BoxGeometry(0.98, 0.06, 0.98);
+      const ca = palette.shopFloorA, cb = palette.shopFloorB;
+      const { minX, minZ } = SHOP_BOX;
+      for (const t of s.tileData) b.add(box, (Math.floor(t.x - minX) + Math.floor(t.z - minZ)) % 2 ? ca : cb, [t.x, 0.01, t.z]);
+      const group = new THREE.Group();
+      const merged = mergeGeometries(parts)!;
+      const solid = new THREE.Mesh(merged, toon('#ffffff', { vertexColors: true }));
+      solid.add(new THREE.Mesh(merged, outline(0.035)));
+      group.add(solid, b.mesh(0));
+      s.group.add(group);
+      this.baked = group;
+    }
+    this.baked.visible = true;
+    s.tiles.visible = false;
+    for (const w of s.walls) w.visible = false;
+    s.roof.visible = false;
+    for (const o of s.interior) o.visible = false;
+  }
+
   /** Apply shop reveal progress (0..1 per part) to the meshes. */
   applyShop(): void {
     const s = this.shop, p = this.shopProgress;
     s.group.visible = this.shopBuilt || p.tiles > 0;
     if (!s.group.visible) return;
+    if (this.shopBuilt) {
+      if (!this.baked?.visible) this.bake();
+      s.sign.visible = true;
+      s.sign.rotation.x = Math.sin(this.t * 1.7) * 0.02;
+      return;
+    }
+    if (this.baked) this.baked.visible = false;
+    s.tiles.visible = true;
     s.tileData.forEach((t, i) => {
       const k = Math.max(0, Math.min(1, (p.tiles * 1.6 - t.delay) / 0.35));
       const e = ease.outBack(k);
       this.tileM.makeTranslation(t.x, -0.04 + e * 0.05, t.z);
-      this.tileM.scale(new THREE.Vector3(Math.max(0.001, e), 1, Math.max(0.001, e)));
+      this.tileM.scale(this.tileScale.set(Math.max(0.001, e), 1, Math.max(0.001, e)));
       s.tiles.setMatrixAt(i, this.tileM);
     });
     s.tiles.instanceMatrix.needsUpdate = true;
@@ -358,9 +444,12 @@ export class World {
 
   update(dt: number, drawPeds: boolean): void {
     this.t += dt;
-    const board = this.forSale.userData.board as THREE.Object3D;
     this.forSaleWiggle = Math.max(0, this.forSaleWiggle - dt * 1.5);
-    board.rotation.z = Math.sin(this.t * 1.3) * 0.04 + Math.sin(this.t * 18) * 0.25 * this.forSaleWiggle;
+    this.forSales.forEach((f, i) => {
+      const board = f.userData.board as THREE.Object3D;
+      board.rotation.z = Math.sin(this.t * 1.3 + i) * 0.04 + Math.sin(this.t * 18) * 0.25 * this.forSaleWiggle;
+    });
+    this.cartDecor.visible = !this.shopBuilt && this.shopProgress.tiles < 0.5;
     if (this.ghost.visible) {
       const m = (this.ghost.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial;
       m.opacity = 0.55 + 0.3 * Math.sin(this.t * 3);

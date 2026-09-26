@@ -71,7 +71,7 @@ export const feel = {
     /** Scoring window (seconds), measured from the first reversal. */
     windowSec: 1.6,
     /** If the player never moves, the shake resolves OK after this grace (seconds). */
-    idleGraceSec: 1.1,
+    idleGraceSec: 1.5,
     /** Minimum pointer travel along the dominant axis before a direction change counts (CSS px). */
     minTravelPx: 18,
     /** Target tempo shown by the breathing ring (reversals per second). */
@@ -106,20 +106,22 @@ export const feel = {
     /** Camera distance per stage (m). Grows as the shop grows. */
     distance: { cart: 12, tinyShop: 17 } as Record<string, number>,
     /** Keep this many metres of world visible across the narrow axis per stage. */
-    frameWidth: { cart: 7.1, tinyShop: 12.2 } as Record<string, number>,
+    frameWidth: { cart: 7.1, tinyShop: 9.8 } as Record<string, number>,
     /** Landscape: metres of ground depth to keep visible vertically. */
-    frameDepth: { cart: 10.5, tinyShop: 15 } as Record<string, number>,
+    frameDepth: { cart: 10.5, tinyShop: 14 } as Record<string, number>,
     /** Follow spring (critically damped-ish). */
     followStiffness: 40,
     followDamping: 12,
     /** How far the camera may drift from the stage centre toward the player (0..1). */
-    followWeight: { cart: 0.6, tinyShop: 0.7 } as Record<string, number>,
+    followWeight: { cart: 0.6, tinyShop: 0.8 } as Record<string, number>,
     /** Look-ahead toward the player's velocity (seconds). */
     lookAhead: 0.12,
     /** Shake hero moment: push to this fraction of distance over pushInSec. */
     shakePushIn: 0.5,
     pushInSec: 0.25,
     pushOutSec: 0.45,
+    /** Furthest world z (the back of the lot) the bottom screen edge may show; stops the follow drifting onto empty grass. */
+    backLimitZ: { cart: 8.4, tinyShop: 8.2 } as Record<string, number>,
     /** Portrait screens get a wider framing rule so the cart stays in view. */
     portraitDistanceBoost: 1.0,
     /** Zoom easing between stages (seconds). */

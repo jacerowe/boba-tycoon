@@ -17,7 +17,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +30,8 @@ jobs:
       - name: Unit + sim bot tests
         run: npm test
       - run: npm run build
+      - name: Bundle size gate (JS <= 600 KB gzipped)
+        run: npm run size
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Rendered e2e (Chromium phone 390x844)

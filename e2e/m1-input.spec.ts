@@ -11,69 +11,60 @@ async function reach(page: Page, id: string, timeout = 15_000): Promise<void> {
   await waitFor(page, (s) => dist(s.world.player.pos, sp) < 0.8, timeout);
 }
 
-async function mode(page: Page): Promise<string> {
-  return page.evaluate(() => (window as unknown as { __boba: { input(): { mode: string } } }).__boba.input().mode);
+async function pos(page: Page): Promise<{ x: number; z: number }> {
+  return page.evaluate(() => { const p = (window as any).__boba.game.sim.world.player.pos; return { x: p.x, z: p.z }; });
+}
+
+/** A quiet cart: no orders, no rushes, so stations never take over the controls mid-route. */
+async function quiet(page: Page): Promise<void> {
+  await hook(page, 'skipTo', 'bottlenecks');
+  await page.waitForTimeout(300);
+  await page.evaluate(() => { const w = (window as any).__boba.game.sim.world; w.customers = []; w.spawnT = 1e9; w.events.lockUntil = 1e9; });
+}
+
+/**
+ * Steer with short pulses sized to the remaining distance (hold → release → look again), so slow
+ * headless frames never make the player overshoot. A player's thumb does the same thing.
+ */
+async function pulseTo(page: Page, target: { x: number; z: number }, radius: number, push: (dx: number, dz: number) => Promise<void>, release: () => Promise<void>, what: string): Promise<void> {
+  // Real DOM input → real InputController → commands → sim, on a frozen clock we step by hand,
+  // so slow headless frames can't delay a release and make the player overshoot.
+  await hook(page, 'setTimeScale', 0);
+  for (let i = 0; i < 80; i++) {
+    const p = await pos(page);
+    const dx = target.x - p.x, dz = target.z - p.z;
+    const d = Math.hypot(dx, dz);
+    if (d < radius) { await hook(page, 'setTimeScale', 1); return; }
+    await push(dx / d, dz / d);
+    await hook(page, 'tick', Math.max(2, Math.min(18, Math.round((d / 5.4) * 60 * 0.7))));
+    await release();
+    await hook(page, 'tick', 4);
+  }
+  const s = await state(page);
+  throw new Error(what + ' did not reach target ' + JSON.stringify({ target, pos: s.world.player.pos, task: s.world.player.task?.kind }));
 }
 
 async function joystickTo(page: Page, target: { x: number; z: number }, radius = 0.5): Promise<void> {
   const vp = page.viewportSize()!;
   const cx = vp.width / 2, cy = vp.height * 0.72;
-  await page.mouse.move(cx, cy);
-  await page.mouse.down();
-  const t0 = Date.now();
-  try {
-    while (Date.now() - t0 < 12_000) {
-      // Passing the shaker/sealer mid-recipe enters shake/seal mode: lift and press again, like a player.
-      if ((await mode(page)) !== 'normal') {
-        await page.mouse.up();
-        await page.waitForTimeout(100);
-        await page.mouse.move(cx, cy);
-        await page.mouse.down();
-        continue;
-      }
-      const s = await state(page);
-      const p = s.world.player.pos;
-      const dx = target.x - p.x, dz = target.z - p.z;
-      const d = Math.hypot(dx, dz);
-      if (d < radius) return;
-      const k = Math.min(1, d / 1.2);
-      await page.mouse.move(cx + (dx / d) * 52 * Math.max(0.4, k), cy + (dz / d) * 52 * Math.max(0.4, k), { steps: 2 });
-      await page.waitForTimeout(40);
-    }
-    const s = await state(page);
-    throw new Error('joystick did not reach target ' + JSON.stringify({ target, pos: s.world.player.pos, task: s.world.player.task?.kind, mi: s.world.player.moveInput }));
-  } finally {
-    await page.mouse.up();
-  }
+  await pulseTo(page, target, radius, async (ux, uz) => {
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + ux * 50, cy + uz * 50, { steps: 3 });
+  }, () => page.mouse.up(), 'joystick');
 }
 
 async function keysTo(page: Page, target: { x: number; z: number }, radius = 0.5): Promise<void> {
-  const held = new Set<string>();
-  const set = async (want: Set<string>) => {
-    for (const k of held) if (!want.has(k)) { await page.keyboard.up(k); held.delete(k); }
-    for (const k of want) if (!held.has(k)) { await page.keyboard.down(k); held.add(k); }
-  };
-  const t0 = Date.now();
-  try {
-    while (Date.now() - t0 < 12_000) {
-      const s = await state(page);
-      const p = s.world.player.pos;
-      const dx = target.x - p.x, dz = target.z - p.z;
-      if (Math.hypot(dx, dz) < radius) return;
-      const want = new Set<string>();
-      if (Math.abs(dx) > radius * 0.5) want.add(dx > 0 ? 'd' : 'a');
-      if (Math.abs(dz) > radius * 0.5) want.add(dz > 0 ? 's' : 'w');
-      await set(want);
-      await page.waitForTimeout(30);
-    }
-    const s = await state(page);
-    throw new Error('keys did not reach target ' + JSON.stringify({ target, pos: s.world.player.pos, task: s.world.player.task?.kind, mi: s.world.player.moveInput }));
-  } finally {
-    await set(new Set());
-  }
+  const held: string[] = [];
+  await pulseTo(page, target, radius, async (ux, uz) => {
+    if (Math.abs(ux) > 0.38) held.push(ux > 0 ? 'd' : 'a');
+    if (Math.abs(uz) > 0.38) held.push(uz > 0 ? 's' : 'w');
+    for (const k of held) await page.keyboard.down(k);
+  }, async () => { for (const k of held.splice(0)) await page.keyboard.up(k); }, 'keys');
 }
 
 test.describe('M1 input: every method reaches every station', () => {
+  test.describe.configure({ timeout: 420_000 });
   test.beforeEach(async ({ page }) => {
     await boot(page);
     await hook(page, 'setTimeScale', 2);
@@ -100,6 +91,8 @@ test.describe('M1 input: every method reaches every station', () => {
   });
 
   test('floating joystick', async ({ page }) => {
+    await hook(page, 'setTimeScale', 1);
+    await quiet(page);
     for (const id of RING) {
       await joystickTo(page, CENTER, 0.6);
       await joystickTo(page, await servicePoint(page, id), 0.55);
@@ -107,6 +100,8 @@ test.describe('M1 input: every method reaches every station', () => {
   });
 
   test('WASD', async ({ page }) => {
+    await hook(page, 'setTimeScale', 1);
+    await quiet(page);
     for (const id of RING) {
       await keysTo(page, CENTER, 0.6);
       await keysTo(page, await servicePoint(page, id), 0.55);

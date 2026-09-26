@@ -22,7 +22,7 @@ import { Coins } from './coins';
 import { SPRITE, FACE, PLAYER_FACE } from './textures';
 import { Spring, Squasher, Tweener, ease, lerpAngle } from './juice';
 import { cylinder, torus } from './geometry';
-import { iconCanvas } from '../ui/icons';
+import { iconCanvas, iconUrl } from '../ui/icons';
 import type { Overlay, BubbleView } from '../ui/overlay';
 import { S } from '../ui/strings';
 import { padPos } from '../sim/upgrades';
@@ -649,7 +649,7 @@ export class GameView {
     price.className = 'price';
     const coin = document.createElement('img');
     coin.className = 'icon';
-    coin.src = iconCanvas('coin', 64).toDataURL();
+    coin.src = iconUrl('coin', 64);
     const priceEl = document.createElement('span');
     price.append(coin, priceEl);
     tag.appendChild(price);
@@ -1016,7 +1016,7 @@ export class GameView {
         tag.el.innerHTML = '';
         const ing = sim.reg.station(st.def).ingredientId;
         const img = document.createElement('img');
-        img.src = iconCanvas(icon === 'arrowUp' && ing ? ing : icon, 96).toDataURL();
+        img.src = iconUrl(icon === 'arrowUp' && ing ? ing : icon, 96);
         tag.el.appendChild(img);
         tag.el.classList.toggle('warn', icon === 'arrowUp');
       }
@@ -1056,7 +1056,7 @@ export class GameView {
     if (b.recipe !== c.recipeId) { b.recipe = c.recipeId; b.img.src = this.icons.get(c.recipeId); }
     if (b.moodIdx !== c.mood) {
       b.moodIdx = c.mood;
-      b.mood.src = iconCanvas(['faceHappy', 'faceNeutral', 'faceAngry', 'faceFurious'][c.mood], 64).toDataURL();
+      b.mood.src = iconUrl(['faceHappy', 'faceNeutral', 'faceAngry', 'faceFurious'][c.mood], 64);
     }
     const frac = Math.max(0, c.patience / c.patienceMax);
     const circ = 2 * Math.PI * 15;
@@ -1065,8 +1065,11 @@ export class GameView {
     const claimed = this.sim.claimedCustomers().has(c.id);
     b.root.classList.toggle('claimed', claimed);
     b.pop = Math.min(1, b.pop + 1 / 12);
-    const zoom = Math.min(1, 16 / Math.max(8, this.rig.camera.position.distanceTo(tmpV.set(v.x, 0, v.z))));
-    const s = ease.outBack(b.pop) * (c.scripted === 'tutorial' ? 1.15 : 1) * (0.72 + 0.28 * zoom);
+    // Size bubbles by how big a metre looks on screen, so crowded shop lines don't pile up.
+    const a0 = this.project(tmpV.set(v.x - 0.5, 1.5, v.z)), a1 = this.project(tmpV2.set(v.x + 0.5, 1.5, v.z));
+    const pxPerM = Math.abs(a1.x - a0.x);
+    const fit = Math.max(0.62, Math.min(1, pxPerM / 58));
+    const s = ease.outBack(b.pop) * (c.scripted === 'tutorial' ? 1.15 : 1) * fit;
     const lift = c.queueIndex >= 0 && c.queueIndex % 2 === 1 ? 0.55 : 0;
     const p = this.project(tmpV.set(v.x, (1.62 + v.hop) * v.look.height + 0.35 + lift, v.z));
     this.overlay.place(b.root, p.x, p.y, s);
@@ -1108,8 +1111,10 @@ export class GameView {
   }
 
   pickForSale(x: number, y: number): boolean {
-    const p = this.project(tmpV.copy(this.world.forSale.position).setY(1.3));
-    return p.vis && Math.hypot(p.x - x, p.y - y) < 60;
+    return this.world.forSales.some((f) => {
+      const p = this.project(tmpV.copy(f.position).setY(1.3));
+      return p.vis && Math.hypot(p.x - x, p.y - y) < 60;
+    });
   }
 
   perf(): { calls: number; triangles: number; textures: number; geometries: number } {

@@ -10,11 +10,19 @@ test('practice rush: warning, slam, combo, results card, claim', async ({ page }
   await page.evaluate(() => (window as any).__boba.actions.command({ type: 'DebugGiveUpgrade', upgradeId: 'carryTray' }));
   await hook(page, 'skipTo', 'practiceRush');
   // Warning: banner + flicker, no speed-up yet.
-  await page.waitForFunction(() => (window as any).__boba.game.sim.world.events.active?.phase === 'warning', undefined, { timeout: 20_000, polling: 'raf' });
+  // Freeze the clock the moment the warning starts so a slow machine can't slide into the active phase first.
+  await page.waitForFunction(() => {
+    const b = (window as any).__boba;
+    if (b.game.sim.world.events.active?.phase !== 'warning') return false;
+    b.setTimeScale(0);
+    return true;
+  }, undefined, { timeout: 20_000, polling: 'raf' });
   await page.waitForTimeout(400);
   await page.screenshot({ path: 'docs/screenshots/m4/phone-rush-warning.png' });
   let s = await state(page);
+  expect(s.world.events.active?.phase).toBe('warning');
   expect(s.world.mods.worldSpeed).toBe(1);
+  await hook(page, 'setTimeScale', 1);
   // Let the bot play the rush.
   await hook(page, 'bot', 'competent');
   await page.waitForFunction(() => (window as any).__boba.game.sim.world.events.active?.phase === 'active', undefined, { timeout: 20_000, polling: 'raf' });

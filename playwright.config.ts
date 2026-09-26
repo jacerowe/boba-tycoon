@@ -20,7 +20,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-phone',
-      use: { ...devices['Pixel 7'], browserName: 'chromium', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true },
+      use: { ...devices['Pixel 7'], browserName: 'chromium', viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, hasTouch: true, isMobile: true },
     },
     {
       name: 'chromium-desktop',

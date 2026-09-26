@@ -22,11 +22,12 @@ One line per call. Where the brief was silent, I picked whatever makes the game 
 - A "not yet" bonk only fires when you *enter* a station's radius, with a 1.2s cooldown per station, so it never nags.
 
 ## The shake
-- The 1.6s window starts at the first reversal (not at mode entry), so a slow starter isn't punished. With no movement it resolves OK after 1.1s of grace. The whole beat stays ~2s.
+- The 1.6s window starts at the first reversal (not at mode entry), so a slow starter isn't punished. The whole beat stays ~2s once you start.
 - PERFECT needs ≥8 reversals *and* ≥70% of intervals within ±35% of the target tempo (5/s). Frantic off-tempo shaking caps at GREAT. `perfectOnTempoFraction` is in feel.ts.
 - The first-ever shake uses generous thresholds (GREAT at 2 reversals, PERFECT at 7 with ±50% tempo) and a ghost-hand swipe.
+- You get 1.5s to start shaking before an idle shake resolves OK (1.1s felt too tight for a kid who just walked up).
 - The sim never waits forever: if no ShakeResult arrives within window + grace + 1.5s, it resolves OK.
-- Shake hero moment: camera pushes to 55%, the cup is lifted up and scaled 1.35×, the ticket hides, background vignettes.
+- Shake hero moment: the camera pushes to 50% distance, the cup is lifted overhead and scaled 1.6× with the arms up, the ticket hides, the background vignettes, and a dashed ring breathes at the target tempo.
 
 ## Tiers look different on the cup
 - OK: plain cup, plain film lid.
@@ -55,7 +56,7 @@ One line per call. Where the brief was silent, I picked whatever makes the game 
 - Cart upgrades you skipped stay available in the shop. The Bench is cart-only; in the shop, Seating adds a bench along the queue rope.
 
 ## Progression and pacing
-- The goal (Tiny Shop) pad appears at the goal beat (≥7:20 game time). Shop price tuned to 395 so the competent bot lands at 8.1–9.0 game-minutes and the casual bot at 13.4–14.2 (see `tests/botpace.test.ts`).
+- The goal (Tiny Shop) pad appears at the goal beat (8:00 game time). Shop price 375, so the competent bot lands at 8.3–9.2 game-minutes and the casual bot at 14.1–14.6 (see `tests/botpace.test.ts`).
 - Post-shop unlocks: Rainbow Jelly (+ ice recipe) 15s after the reveal, Taro at +150s, Rainbow Taro Slush at +300s. Each is offered with the menu card.
 - Menu choice: new recipes are offered on a card (icons: "pays more", "takes longer"). The menu board station (appears with the second topping) reopens the choice; at least one drink always stays on the menu.
 
@@ -66,7 +67,18 @@ One line per call. Where the brief was silent, I picked whatever makes the game 
 - The umbrella sits on the right of the cart so it never hides the line (which snakes up-left).
 - Customer order bubbles show a real mini render of the drink (same cup renderer, rendered once per recipe/tier).
 
+## Carrying
+- The tower stacks two cups per layer at 0.8 scale, so 12 cups is a 6-layer tower (~2.9m) instead of a 7m pole. Each layer's lean is spring-driven by the player's acceleration and the whole tower's lean is capped at 0.5 rad: it looks barely stable and never falls.
+- Stacked cups carry no straw; the straw pops in during the handoff arc (real shops hand the straw over separately) so towers stay tidy.
+- The step ticket sits just under the player's feet, not over their head, so it never hides the counter or the line.
+
+## Camera
+- Portrait frames a fixed width per stage (cart 7.1m, shop 9.8m) and follows the player (weight 0.6 / 0.8); landscape frames ground depth instead. The shop is intentionally not all on screen at once on a phone: characters and cups stay big enough to read.
+- A tall phone screen shows ~28m of ground depth at the shop's width, and the shop is only ~14m deep. The follow stops once the bottom screen edge would pass the back of the lot (`camera.backLimitZ`). The spare space goes to the street, the road and the FOR SALE lots across it (the world the game grows into), not to empty grass behind the shop.
+
 ## Tech
+- Headless e2e runs at device-pixel-ratio 1 (same 390×844 viewport) because software WebGL at DPR 2 starves the CPU; docs screenshots are shot separately at DPR 2.
+- Steering e2e (joystick, WASD) sends real DOM input but steps the sim clock by hand (`__boba.tick(n)`), because slow software rendering delays key-up events by hundreds of ms and made closed-loop steering overshoot.
 - Preview port 4391 for Playwright and 5287 for the dev server (other local apps already used 4173/5199).
 - Git identity is repo-local and uses Jace's GitHub noreply address so the public repo doesn't expose a personal email.
 

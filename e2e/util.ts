@@ -76,25 +76,27 @@ export function dist(a: { x: number; z: number }, b: { x: number; z: number }): 
  * Chromium and WebKit, where page.touchscreen can only tap).
  */
 export async function swipe(page: Page, opts: { reversalsPerSec: number; durationSec: number; amplitudePx: number; axis?: 'x' | 'y' }): Promise<void> {
-  await page.evaluate((o) => new Promise<void>((resolve) => {
+  // Dispatch on a busy-wait clock so event timing is exact even when headless rendering is slow
+  // (the page doesn't render during the swipe, just like a real finger doesn't wait for frames).
+  await page.evaluate((o) => {
     const cx = innerWidth / 2, cy = innerHeight * 0.6;
-    const t0 = performance.now();
     const freq = o.reversalsPerSec / 2;
     const target = document.querySelector('#app') as HTMLElement;
-    target.dispatchEvent(new PointerEvent('pointerdown', { clientX: cx, clientY: cy, bubbles: true, pointerId: 7, pointerType: 'touch', isPrimary: true }));
-    const tick = () => {
+    const init = (x: number, y: number) => ({ clientX: x, clientY: y, bubbles: true, pointerId: 7, pointerType: 'touch', isPrimary: true });
+    target.dispatchEvent(new PointerEvent('pointerdown', init(cx, cy)));
+    const t0 = performance.now();
+    let x: number, y: number;
+    for (let step = 1; ; step++) {
+      const due = t0 + step * 8;
+      while (performance.now() < due) { /* busy wait */ }
       const t = (performance.now() - t0) / 1000;
       const off = Math.sin(2 * Math.PI * freq * t) * o.amplitudePx;
-      const x = o.axis === 'y' ? cx : cx + off, y = o.axis === 'y' ? cy + off : cy;
-      window.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, bubbles: true, pointerId: 7, pointerType: 'touch', isPrimary: true }));
-      if (t < o.durationSec) setTimeout(tick, 8);
-      else {
-        window.dispatchEvent(new PointerEvent('pointerup', { clientX: x, clientY: y, bubbles: true, pointerId: 7, pointerType: 'touch', isPrimary: true }));
-        resolve();
-      }
-    };
-    tick();
-  }), opts);
+      x = o.axis === 'y' ? cx : cx + off; y = o.axis === 'y' ? cy + off : cy;
+      window.dispatchEvent(new PointerEvent('pointermove', init(x, y)));
+      if (t >= o.durationSec) break;
+    }
+    window.dispatchEvent(new PointerEvent('pointerup', init(x, y)));
+  }, opts);
 }
 
 /** Tap at a screen point with a synthetic pointer (down + up). */
