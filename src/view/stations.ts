@@ -35,11 +35,14 @@ export interface StationParts {
   label?: THREE.Object3D;
 }
 
-function cupShellMesh(color: string): THREE.Mesh {
-  const g = lathe(cupProfile(0.14, 0.175, 0.44, 0.04, 4), 14);
+function cupShellGeo(): THREE.BufferGeometry {
+  // Closed (solid) upside-down cup so the merged outline reads cleanly.
+  const pts = cupProfile(0.14, 0.175, 0.44, 0.04, 4);
+  pts.push(new THREE.Vector2(0, 0.44));
+  const g = lathe(pts, 14);
   g.rotateX(Math.PI);
   g.translate(0, 0.44, 0);
-  return outlined(g, color, 0.018);
+  return g;
 }
 
 function build(visual: string): StationParts {
@@ -51,16 +54,14 @@ function build(visual: string): StationParts {
     case 'cupStack': {
       base(b);
       body.add(b.mesh(0.028));
-      const cups = new THREE.Group();
+      // Two jiggly stacks of upside-down cups, baked into one mesh (one draw call + outline).
+      const cb = new MeshBuilder();
       const colors = ['#ffffff', '#ffe6ef', '#ffffff', '#fff1c9', '#ffffff', '#e3f7ff'];
+      const cupGeo = cupShellGeo();
       for (let s = 0; s < 2; s++) {
-        for (let i = 0; i < 5; i++) {
-          const c = cupShellMesh(colors[(i + s) % colors.length]);
-          c.position.set(s ? 0.2 : -0.2, BASE_H + i * 0.09, 0);
-          c.scale.setScalar(0.95);
-          cups.add(c);
-        }
+        for (let i = 0; i < 5; i++) cb.add(cupGeo, colors[(i + s) % colors.length], [s ? 0.2 : -0.2, BASE_H + i * 0.09, 0], [0, 0, 0], 0.95);
       }
+      const cups = cb.mesh(0.018);
       body.add(cups);
       parts.cups = cups;
       parts.spout.set(0, 1.1, 0.2);
@@ -115,7 +116,7 @@ function build(visual: string): StationParts {
       const rng = mulberry(7);
       for (let i = 0; i < 26; i++) {
         const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * 0.24;
-        pb.add(sphere(0.055, 8, 6), i % 5 ? palette.pearl : palette.pearlShine, [Math.cos(a) * r, 0.05 + rng() * 0.07, Math.sin(a) * r]);
+        pb.add(sphere(0.055, 6, 4), i % 5 ? palette.pearl : palette.pearlShine, [Math.cos(a) * r, 0.05 + rng() * 0.07, Math.sin(a) * r]);
       }
       pb.add(cylinder(0.28, 0.28, 0.06, 18), '#4a2f22', [0, 0.02, 0]);
       const pile = pb.mesh(0);
@@ -138,7 +139,7 @@ function build(visual: string): StationParts {
       const rng = mulberry(11);
       for (let i = 0; i < 26; i++) {
         const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * 0.17;
-        pb.add(sphere(0.055, 8, 6), i % 4 ? palette.popping : '#ff8fb1', [Math.cos(a) * r, 0.05 + rng() * 0.36, Math.sin(a) * r]);
+        pb.add(sphere(0.055, 6, 4), i % 4 ? palette.popping : '#ff8fb1', [Math.cos(a) * r, 0.05 + rng() * 0.36, Math.sin(a) * r]);
       }
       const pile = pb.mesh(0);
       pile.position.set(0, BASE_H + 0.02, 0);
@@ -153,7 +154,7 @@ function build(visual: string): StationParts {
       body.add(b.mesh(0.028));
       const pb = new MeshBuilder();
       const rng = mulberry(3);
-      for (let i = 0; i < 16; i++) pb.add(roundedBox(0.12, 0.12, 0.12, 0.03), palette.ice, [(rng() - 0.5) * 0.55, 0.02 + rng() * 0.06, (rng() - 0.5) * 0.32], [rng(), rng(), rng()]);
+      for (let i = 0; i < 12; i++) pb.add(roundedBox(0.12, 0.12, 0.12, 0.03, 1), palette.ice, [(rng() - 0.5) * 0.55, 0.02 + rng() * 0.06, (rng() - 0.5) * 0.32], [rng(), rng(), rng()]);
       const pile = pb.mesh(0.012);
       pile.position.set(0, BASE_H + 0.2, 0);
       body.add(pile);
@@ -167,7 +168,7 @@ function build(visual: string): StationParts {
       body.add(b.mesh(0.028));
       const pb = new MeshBuilder();
       const rng = mulberry(5);
-      for (let i = 0; i < 18; i++) pb.add(roundedBox(0.11, 0.11, 0.11, 0.03), palette.jelly[i % palette.jelly.length], [(rng() - 0.5) * 0.4, 0.02 + rng() * 0.06, (rng() - 0.5) * 0.4], [rng(), rng(), 0]);
+      for (let i = 0; i < 14; i++) pb.add(roundedBox(0.11, 0.11, 0.11, 0.03, 1), palette.jelly[i % palette.jelly.length], [(rng() - 0.5) * 0.4, 0.02 + rng() * 0.06, (rng() - 0.5) * 0.4], [rng(), rng(), 0]);
       const pile = pb.mesh(0.012);
       pile.position.set(0, BASE_H + 0.2, 0);
       body.add(pile);

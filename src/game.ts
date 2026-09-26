@@ -69,7 +69,7 @@ export class Game {
   private modalKind: 'offer' | 'results' | 'settings' | 'menu' | null = null;
   readonly startedAt = performance.now();
   commandLog: { tick: number; cmd: Command }[] = [];
-  eventLog: { t: number; type: string }[] = [];
+  eventLog: ({ t: number } & SimEvent)[] = [];
   onDevToggle: (() => void) | null = null;
 
   constructor(private container: HTMLElement, private uiRoot: HTMLElement, readonly opts: GameOptions) {
@@ -307,7 +307,7 @@ export class Game {
     const O = this.overlay;
     const sim = this.sim;
     for (const e of events) {
-      if (this.eventLog.length < 20000) this.eventLog.push({ t: sim.world.time, type: e.type });
+      if (this.eventLog.length < 20000) this.eventLog.push({ t: sim.world.time, ...e });
       switch (e.type) {
         case 'GameStarted':
           if (this.settings.music) this.music.start();

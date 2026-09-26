@@ -93,7 +93,7 @@ export const feel = {
     followStiffness: 260,
     followDamping: 18,
     /** Max visual throw of the shaker (m). */
-    maxThrow: 0.28,
+    maxThrow: 0.42,
     /** Safety: the sim resolves OK if no result arrives within window + this (seconds). */
     simTimeoutPad: 1.5,
   },
@@ -117,7 +117,7 @@ export const feel = {
     /** Look-ahead toward the player's velocity (seconds). */
     lookAhead: 0.12,
     /** Shake hero moment: push to this fraction of distance over pushInSec. */
-    shakePushIn: 0.55,
+    shakePushIn: 0.5,
     pushInSec: 0.25,
     pushOutSec: 0.45,
     /** Portrait screens get a wider framing rule so the cart stays in view. */
@@ -164,14 +164,18 @@ export const feel = {
   },
 
   stack: {
-    /** Vertical spacing of stacked cups (m). */
-    cupSpacing: 0.46,
-    /** Spring linking stack segments; sway grows toward the top. */
+    /** Cups per tower layer, their scale, and the side-by-side gap (m). */
+    perLayer: 2,
+    cupScale: 0.8,
+    layerGap: 0.33,
+    /** Spring linking tower layers; sway grows toward the top. */
     stiffness: 70,
     damping: 7.5,
     /** How strongly player acceleration pushes the stack. */
-    accelInfluence: 0.02,
-    maxLean: 0.22,
+    accelInfluence: 0.006,
+    /** Max lean per layer, and for the whole tower (radians): barely stable, never falls. */
+    maxLean: 0.07,
+    maxTotalLean: 0.5,
     /** Sweat drop appears at this many cups during a rush. */
     sweatAt: 8,
     /** Handoff arc duration (s) and height (m). */

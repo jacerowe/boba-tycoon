@@ -54,11 +54,11 @@ function hatGeo(type: number): THREE.BufferGeometry {
   const W = '#ffffff', L = '#ffffff';
   switch (type) {
     case 1: // cap
-      b.add(sphere(0.315, 16, 8, ), W, [0, 0.04, 0], [0, 0, 0], [1, 0.72, 1]);
+      b.add(sphere(0.315, 12, 6), W, [0, 0.04, 0], [0, 0, 0], [1, 0.72, 1]);
       b.add(cylinder(0.2, 0.22, 0.03, 16), W, [0, 0.07, 0.25], [0.22, 0, 0], [1, 1, 0.9]);
       break;
     case 2: // beanie
-      b.add(sphere(0.33, 16, 10), W, [0, 0.08, -0.01], [0, 0, 0], [1, 0.82, 1]);
+      b.add(sphere(0.33, 12, 7), W, [0, 0.08, -0.01], [0, 0, 0], [1, 0.82, 1]);
       b.add(cylinder(0.33, 0.33, 0.1, 16), L, [0, 0.02, -0.01]);
       b.add(sphere(0.09, 10, 8), '#ffffff', [0, 0.36, -0.01]);
       break;
@@ -82,7 +82,7 @@ function hatGeo(type: number): THREE.BufferGeometry {
 
 function facePatch(): THREE.BufferGeometry {
   const span = 1.45;
-  return new THREE.SphereGeometry(HEAD_R + 0.004, 14, 10, Math.PI / 2 - span / 2, span, Math.PI * 0.28, Math.PI * 0.5);
+  return new THREE.SphereGeometry(HEAD_R + 0.004, 10, 7, Math.PI / 2 - span / 2, span, Math.PI * 0.28, Math.PI * 0.5);
 }
 
 function faceMaterial(): THREE.MeshBasicMaterial {
@@ -122,24 +122,24 @@ export class CharacterRenderer {
   private s = new THREE.Vector3();
 
   constructor(readonly max = 48) {
-    const bodyGeo = capsule(0.27, 0.26, 6, 14);
+    const bodyGeo = capsule(0.27, 0.26, 4, 12);
     bodyGeo.translate(0, 0.5, 0);
     this.body = new THREE.InstancedMesh(bodyGeo, toon('#ffffff'), max);
     this.bodyO = new THREE.InstancedMesh(bodyGeo, outline(0.03), max);
-    const headGeo = sphere(HEAD_R, 18, 14);
+    const headGeo = sphere(HEAD_R, 14, 10);
     this.head = new THREE.InstancedMesh(headGeo, toon('#ffffff'), max);
     this.headO = new THREE.InstancedMesh(headGeo, outline(0.03), max);
-    const hairGeo = new THREE.SphereGeometry(HEAD_R + 0.02, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.42);
+    const hairGeo = new THREE.SphereGeometry(HEAD_R + 0.02, 12, 5, 0, Math.PI * 2, 0, Math.PI * 0.42);
     hairGeo.rotateX(-0.35);
     this.hair = new THREE.InstancedMesh(hairGeo, toon('#ffffff'), max);
     const faceGeo = facePatch();
     this.aFace = new THREE.InstancedBufferAttribute(new Float32Array(max), 1).setUsage(THREE.DynamicDrawUsage);
     faceGeo.setAttribute('iFace', this.aFace);
     this.face = new THREE.InstancedMesh(faceGeo, faceMaterial(), max);
-    const footGeo = sphere(0.1, 10, 8);
+    const footGeo = sphere(0.1, 8, 5);
     footGeo.scale(1, 0.6, 1.35);
     this.feet = new THREE.InstancedMesh(footGeo, toon(palette.cartWheel), max * 2);
-    const armGeo = capsule(0.075, 0.18, 4, 8);
+    const armGeo = capsule(0.075, 0.18, 2, 6);
     this.arms = new THREE.InstancedMesh(armGeo, toon('#ffffff'), max * 2);
     const shGeo = new THREE.PlaneGeometry(0.95, 0.95).rotateX(-Math.PI / 2);
     this.shadow = new THREE.InstancedMesh(shGeo, blobShadowMaterial(), max);

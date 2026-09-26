@@ -217,7 +217,7 @@ export class PlayerView {
 
     // Arms: forward when holding something, swinging when walking empty-handed.
     const holding = stackCount > 0 || pose.working;
-    const armFwd = holding ? -1.25 : Math.sin(this.walkPhase) * 0.5 * Math.min(1, speed / 2);
+    const armFwd = pose.shaking ? -2.3 - this.shakeOffset.y * 1.5 : holding ? -1.25 : Math.sin(this.walkPhase) * 0.5 * Math.min(1, speed / 2);
     this.armL.rotation.x = holding ? armFwd : armFwd;
     this.armR.rotation.x = holding ? armFwd : -armFwd;
     this.armL.rotation.z = holding ? -0.25 : 0.1;
@@ -277,7 +277,8 @@ export class PlayerView {
     this.computeCupMatrices(stackCount, pose);
   }
 
-  private updateStack(dt: number, n: number, reducedMotion: boolean): void {
+  private updateStack(dt: number, cups: number, reducedMotion: boolean): void {
+    const n = Math.ceil(cups / feel.stack.perLayer);
     while (this.lx.length < n) { this.lx.push(0); this.lz.push(0); this.vlx.push(0); this.vlz.push(0); }
     const S = feel.stack;
     // Acceleration in the player's local frame (x right, z forward).
@@ -313,39 +314,48 @@ export class PlayerView {
   private computeCupMatrices(n: number, pose: PlayerPose): void {
     const S = feel.stack;
     const bodyM = this.bodyG.matrixWorld;
-    // Hand cup: in front of the chest, a bit to the right if a stack is also carried.
-    const hx = n > 0 ? 0.3 : 0;
+    // Hand cup: in front of the chest, off to the side when a tray is also carried.
+    const hx = n > 0 ? 0.42 : 0;
     const shake = pose.shaking ? this.shakeOffset : null;
     this.tmpE.set(shake ? shake.y * 1.2 : 0, 0, shake ? -shake.x * 1.6 : 0);
     this.tmpQ.setFromEuler(this.tmpE);
     // Shake hero moment: the cup is lifted high, toward the camera, and scaled up.
     const hero = this.heroT;
-    this.tmpV.set(hx * (1 - hero) + (shake ? shake.x : 0), 0.46 + hero * 0.62 + (shake ? Math.abs(shake.y) * 0.3 : 0), 0.42 - hero * 0.12);
-    this.tmpS.setScalar(1 + hero * 0.35);
+    this.tmpV.set(hx * (1 - hero) + (shake ? shake.x : 0), 0.46 + hero * 0.78 + (shake ? shake.y * 0.5 : 0), 0.42 - hero * 0.1);
+    this.tmpS.setScalar(1 + hero * 0.6);
     this.tmpM.compose(this.tmpV, this.tmpQ, this.tmpS);
     this.handMatrix.multiplyMatrices(bodyM, this.tmpM);
-    // Stack on the tray (or in the hands when capacity is 1).
+    // The tower: two cups per layer on the tray, each layer leaning a little more.
     while (this.stackMatrices.length < n) this.stackMatrices.push(new THREE.Matrix4());
-    let x = n > 0 && this.heldVisible ? -0.12 : 0, y = this.trayVisible ? 0.77 : 0.46, z = 0.42;
+    const per = S.perLayer;
+    const layers = Math.ceil(n / per);
+    const k = S.cupScale;
+    let x = n > 0 && this.heldVisible ? -0.1 : 0, y = this.trayVisible ? 0.77 : 0.46, z = 0.4;
     let ax = 0, az = 0;
     const sq = this.stackSquash.x;
-    for (let i = 0; i < n; i++) {
-      ax += this.lx[i] ?? 0;
-      az += this.lz[i] ?? 0;
+    for (let L = 0; L < layers; L++) {
+      ax = Math.max(-S.maxTotalLean, Math.min(S.maxTotalLean, ax + (this.lx[L] ?? 0)));
+      az = Math.max(-S.maxTotalLean, Math.min(S.maxTotalLean, az + (this.lz[L] ?? 0)));
       this.tmpE.set(az, 0, -ax);
       this.tmpQ.setFromEuler(this.tmpE);
-      this.tmpV.set(x, y, z);
-      this.tmpS.set(1 + sq * 0.3, 1 - sq * 0.4, 1 + sq * 0.3);
-      this.tmpM.compose(this.tmpV, this.tmpQ, this.tmpS);
-      this.stackMatrices[i].multiplyMatrices(bodyM, this.tmpM);
-      // Next cup sits on top of this one along its tilted axis.
-      const h = S.cupSpacing * (1 - sq * 0.4) * (CUP.H / 0.58);
+      const inLayer = Math.min(per, n - L * per);
+      for (let j = 0; j < inLayer; j++) {
+        const i = L * per + j;
+        const off = inLayer > 1 ? (j - (inLayer - 1) / 2) * S.layerGap : 0;
+        this.tmpV.set(off, 0, 0).applyQuaternion(this.tmpQ).add(this.tmpV2.set(x, y, z));
+        this.tmpS.set(k * (1 + sq * 0.3), k * (1 - sq * 0.4), k * (1 + sq * 0.3));
+        this.tmpM.compose(this.tmpV, this.tmpQ, this.tmpS);
+        this.stackMatrices[i].multiplyMatrices(bodyM, this.tmpM);
+      }
+      // Next layer sits on top of this one along its tilted axis.
+      const h = (CUP.H * k + 0.035) * (1 - sq * 0.4);
       x += Math.sin(ax) * h;
       y += Math.cos(ax) * Math.cos(az) * h;
       z += Math.sin(az) * h;
     }
   }
 
+  private tmpV2 = new THREE.Vector3();
   heldVisible = false;
   /** 0..1: how far the held cup is lifted into the shake hero pose. */
   heroT = 0;

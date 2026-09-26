@@ -27,7 +27,7 @@ export interface BobaHook {
   resetSave(): void;
   perf(): ReturnType<Game['perf']>;
   bot(kind: 'competent' | 'casual' | null): void;
-  events(): { t: number; type: string }[];
+  events(): ({ t: number; type: string } & Record<string, unknown>)[];
   commands(): unknown[];
   project(x: number, y: number, z: number): { x: number; y: number };
   stationScreen(id: string): { x: number; y: number } | null;

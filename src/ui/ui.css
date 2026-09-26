@@ -57,13 +57,13 @@ html, body {
 
 /* ---- Combo meter -------------------------------------------------------- */
 .combo {
-  position: absolute; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 64px); transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 2px; opacity: 0; transition: opacity 200ms;
+  position: absolute; right: calc(env(safe-area-inset-right, 0px) + 10px); top: calc(env(safe-area-inset-top, 0px) + 66px);
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px; opacity: 0; transition: opacity 200ms;
 }
 .combo.on { opacity: 1; }
 .combo .mult { font-size: 44px; line-height: 1; }
 .combo .label { font-size: 13px; }
-.combo .timer { width: 120px; height: 10px; border: 2px solid var(--ink); border-radius: 6px; background: #fff8; overflow: hidden; }
+.combo .timer { width: 96px; height: 10px; border: 2px solid var(--ink); border-radius: 6px; background: #fff8; overflow: hidden; }
 .combo .timer i { display: block; height: 100%; background: var(--accent2); width: 100%; }
 .combo.bump .mult { animation: comboBump 380ms cubic-bezier(.3,1.9,.5,1); }
 @keyframes comboBump { 0% { transform: scale(0.4) rotate(-12deg); } 60% { transform: scale(1.35) rotate(6deg); } 100% { transform: scale(1) rotate(0); } }
@@ -171,7 +171,7 @@ html, body {
 .rush-frame { position: absolute; inset: 0; box-shadow: inset 0 0 0 10px var(--rush-border), inset 0 0 60px 20px var(--rush-border); opacity: 0; }
 .flash-frame { position: absolute; inset: 0; box-shadow: inset 0 0 90px 30px #fff; opacity: 0; }
 .dim { position: absolute; inset: 0; background: #2a1830; opacity: 0; }
-.vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(74,37,69,0.55) 100%); opacity: 0; transition: opacity 250ms; }
+.vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 38%, rgba(74,37,69,0.62) 100%); opacity: 0; transition: opacity 250ms; }
 .vignette.on { opacity: 1; }
 .shake-ui { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18%); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; transition: opacity 150ms; }
 .shake-ui.on { opacity: 1; }
@@ -179,7 +179,7 @@ html, body {
 .shake-ui .meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--accent2); transition: width 80ms; }
 .shake-ui .meter b { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--ink); }
 .shake-ui .tier { font-size: 26px; white-space: nowrap; min-height: 1.2em; }
-.shake-ring { position: absolute; left: 0; top: 0; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 5px solid #fff; opacity: 0; will-change: transform; }
+.shake-ring { position: absolute; left: 0; top: 0; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; border: 6px dashed #fff; opacity: 0; will-change: transform; }
 .shake-ring.on { opacity: 0.85; }
 
 /* ---- Modals ------------------------------------------------------------- */

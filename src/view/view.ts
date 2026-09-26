@@ -810,7 +810,7 @@ export class GameView {
       const d = P.stack[i];
       const v = this.drinkVisual(d);
       v.update(worldDt);
-      this.cups.draw(this.player.stackMatrices[i], v.look);
+      this.cups.draw(this.player.stackMatrices[i], v.look, 0);
       // PERFECT drinks keep a sparkle swirl orbiting until served.
       if (d.quality === 'perfect' && this.rand() < worldDt * 10) {
         tmpV.setFromMatrixPosition(this.player.stackMatrices[i]);
@@ -833,7 +833,8 @@ export class GameView {
       this.m4.makeRotationFromEuler(new THREE.Euler(f.spin * kf, 0, f.spin * kf * 0.5));
       this.m4.setPosition(tmpV);
       f.visual.update(worldDt);
-      this.cups.draw(this.m4, f.visual.look);
+      // Straw pops in during the handoff arc (not for cups tossed in the bin).
+      this.cups.draw(this.m4, f.visual.look, f.spin ? 0 : ease.outBack(Math.min(1, kf * 1.6)));
       if (kf >= 1) { this.flying.splice(i, 1); f.done(); }
     }
     // Clean up visuals for drinks that no longer exist.
@@ -895,6 +896,17 @@ export class GameView {
         const tap = (Math.sin(performance.now() / 180) + 1) * 8;
         O.ghostHand.style.transform = `translate3d(${p.x - 20}px, ${p.y + 10 + tap}px, 0)`;
       }
+    } else if (this.sim.shop.stats.walkMeters < 1.5 && this.sim.shop.stats.serves === 0 && !P.task && !P.route.length && !this.revealing) {
+      // First moments: a ghost hand taps the glowing station until the player first moves.
+      const next = this.nextStation();
+      const st = next ? this.stations.get(next) : null;
+      O.setPrompt(null);
+      if (st) {
+        const p = this.project(tmpV2.copy(st.root.position).setY(0.7));
+        const tap = (Math.sin(performance.now() / 200) + 1) * 9;
+        O.ghostHand.style.transform = `translate3d(${p.x - 16}px, ${p.y + 6 + tap}px, 0)`;
+        O.ghostHand.classList.add('on');
+      } else O.ghostHand.classList.remove('on');
     } else {
       O.ghostHand.classList.remove('on');
       O.setPrompt(null);

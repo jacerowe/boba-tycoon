@@ -23,14 +23,14 @@ function plane(w: number, d: number, mat: THREE.Material, x: number, y: number, 
 
 function tree(b: MeshBuilder, x: number, z: number, s = 1): void {
   b.add(cylinder(0.14 * s, 0.18 * s, 1.1 * s, 8), palette.treeTrunk, [x, 0.55 * s, z]);
-  b.add(sphere(0.85 * s, 12, 10), palette.treeLeaf, [x, 1.55 * s, z]);
-  b.add(sphere(0.6 * s, 10, 8), palette.treeLeaf2, [x + 0.35 * s, 1.95 * s, z + 0.2 * s]);
-  b.add(sphere(0.55 * s, 10, 8), palette.treeLeaf, [x - 0.4 * s, 1.85 * s, z - 0.1 * s]);
+  b.add(sphere(0.85 * s, 10, 7), palette.treeLeaf, [x, 1.55 * s, z]);
+  b.add(sphere(0.6 * s, 8, 6), palette.treeLeaf2, [x + 0.35 * s, 1.95 * s, z + 0.2 * s]);
+  b.add(sphere(0.55 * s, 8, 6), palette.treeLeaf, [x - 0.4 * s, 1.85 * s, z - 0.1 * s]);
 }
 
 function bush(b: MeshBuilder, x: number, z: number, s = 1, flower?: string): void {
-  b.add(sphere(0.45 * s, 10, 8), palette.grassDark, [x, 0.3 * s, z], [0, 0, 0], [1.3, 0.8, 1]);
-  b.add(sphere(0.35 * s, 10, 8), palette.treeLeaf2, [x + 0.3 * s, 0.34 * s, z + 0.1 * s], [0, 0, 0], [1, 0.8, 1]);
+  b.add(sphere(0.45 * s, 8, 6), palette.grassDark, [x, 0.3 * s, z], [0, 0, 0], [1.3, 0.8, 1]);
+  b.add(sphere(0.35 * s, 8, 6), palette.treeLeaf2, [x + 0.3 * s, 0.34 * s, z + 0.1 * s], [0, 0, 0], [1, 0.8, 1]);
   if (flower) for (let i = 0; i < 4; i++) b.add(sphere(0.07 * s, 6, 5), flower, [x + (i - 1.5) * 0.18 * s, 0.6 * s, z + 0.25 * s]);
 }
 
@@ -40,11 +40,11 @@ function fenceRun(b: MeshBuilder, x0: number, z0: number, x1: number, z1: number
   const ang = Math.atan2(z1 - z0, x1 - x0);
   for (let i = 0; i <= n; i++) {
     const t = i / n;
-    b.add(roundedBox(0.12, 0.62, 0.08, 0.03, 1), palette.fence, [x0 + (x1 - x0) * t, 0.31, z0 + (z1 - z0) * t], [0, -ang, 0]);
+    b.add(new THREE.BoxGeometry(0.12, 0.62, 0.08), palette.fence, [x0 + (x1 - x0) * t, 0.31, z0 + (z1 - z0) * t], [0, -ang, 0]);
   }
   const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
-  b.add(roundedBox(len, 0.08, 0.05, 0.02, 1), palette.fencePost, [mx, 0.44, mz], [0, -ang, 0]);
-  b.add(roundedBox(len, 0.08, 0.05, 0.02, 1), palette.fencePost, [mx, 0.2, mz], [0, -ang, 0]);
+  b.add(new THREE.BoxGeometry(len, 0.08, 0.05), palette.fencePost, [mx, 0.44, mz], [0, -ang, 0]);
+  b.add(new THREE.BoxGeometry(len, 0.08, 0.05), palette.fencePost, [mx, 0.2, mz], [0, -ang, 0]);
 }
 
 function lamp(b: MeshBuilder, x: number, z: number): void {
@@ -95,12 +95,14 @@ export class World {
     g.add(plane(80, ROAD.z1 - ROAD.z0, toon(palette.road), 0, 0.004, (ROAD.z0 + ROAD.z1) / 2));
 
     const b = new MeshBuilder();
+    // Flat ground decals never need outlines: a separate, cheaper mesh.
+    const flatB = new MeshBuilder();
     // curbs
-    b.add(roundedBox(80, 0.12, 0.3, 0.04, 1), palette.curb, [0, 0.06, SIDEWALK.z0]);
-    b.add(roundedBox(80, 0.12, 0.3, 0.04, 1), palette.curb, [0, 0.06, FAR_WALK.z1]);
+    flatB.add(new THREE.BoxGeometry(80, 0.12, 0.3), palette.curb, [0, 0.06, SIDEWALK.z0]);
+    flatB.add(new THREE.BoxGeometry(80, 0.12, 0.3), palette.curb, [0, 0.06, FAR_WALK.z1]);
     // road dashes + crosswalk
-    for (let x = -38; x < 38; x += 3) b.add(new THREE.BoxGeometry(1.6, 0.02, 0.2), palette.roadLine, [x, 0.012, (ROAD.z0 + ROAD.z1) / 2]);
-    for (let i = 0; i < 6; i++) b.add(new THREE.BoxGeometry(0.5, 0.02, 5.4), '#fff8ea', [-11 + i * 0.9, 0.013, (ROAD.z0 + ROAD.z1) / 2]);
+    for (let x = -38; x < 38; x += 3) flatB.add(new THREE.BoxGeometry(1.6, 0.02, 0.2), palette.roadLine, [x, 0.012, (ROAD.z0 + ROAD.z1) / 2]);
+    for (let i = 0; i < 6; i++) flatB.add(new THREE.BoxGeometry(0.5, 0.02, 5.4), '#fff8ea', [-11 + i * 0.9, 0.013, (ROAD.z0 + ROAD.z1) / 2]);
     // Side lots on our side: fenced grass with trees and bushes.
     fenceRun(b, -8.4, -7.3, -24, -7.3);
     fenceRun(b, 8.4, -7.3, 24, -7.3);
@@ -119,13 +121,13 @@ export class World {
       fenceRun(b, x1 - 4.6, z0, x1, z0);
       fenceRun(b, x0, z0, x0, z1);
       fenceRun(b, x1, z0, x1, z1);
-      b.add(new THREE.BoxGeometry(13.2, 0.03, 10.7), cx === 0 ? palette.lotDirt : palette.grassDark, [cx, 0.01, (z0 + z1) / 2]);
-      for (let i = 0; i < 5; i++) b.add(sphere(0.25, 6, 5), palette.lotDirtDark, [cx - 4 + i * 2.1, 0.05, z0 - 3 - (i % 2) * 3], [0, 0, 0], [1.6, 0.25, 1.2]);
+      flatB.add(new THREE.BoxGeometry(13.2, 0.03, 10.7), cx === 0 ? palette.lotDirt : palette.grassDark, [cx, 0.01, (z0 + z1) / 2]);
+      for (let i = 0; i < 5; i++) flatB.add(sphere(0.25, 6, 5), palette.lotDirtDark, [cx - 4 + i * 2.1, 0.05, z0 - 3 - (i % 2) * 3], [0, 0, 0], [1.6, 0.25, 1.2]);
       tree(b, cx + 5, z1 + 1.5, 1.1);
     }
     for (const x of [-26, 26]) tree(b, x, -24, 1.4);
     const env = b.mesh(0.03);
-    g.add(env);
+    g.add(env, flatB.mesh(0));
 
     // FOR SALE sign across the road (sways).
     this.forSale = new THREE.Group();

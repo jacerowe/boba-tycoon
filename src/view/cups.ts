@@ -154,11 +154,11 @@ function buildLiquidGeo(): THREE.BufferGeometry {
   const pts = cupProfile(CUP.RB * CUP.INNER, CUP.RT * CUP.INNER, CUP.H * 0.97, 0.045, 6);
   pts[0].y = 0.012;
   for (const p of pts) p.y = Math.max(p.y, 0.012);
-  return lathe(pts, 22);
+  return lathe(pts, 16);
 }
 
 function buildShellGeo(): THREE.BufferGeometry {
-  return lathe(cupProfile(CUP.RB, CUP.RT, CUP.H, 0.05, 6), 24);
+  return lathe(cupProfile(CUP.RB, CUP.RT, CUP.H, 0.05, 4), 18);
 }
 
 export class CupRenderer {
@@ -222,7 +222,7 @@ export class CupRenderer {
     this.shell = new THREE.InstancedMesh(shellGeo, this.shellMat, maxCups);
     this.shell.renderOrder = 5;
 
-    const rimGeo = torus(CUP.RT, 0.02, 6, 26);
+    const rimGeo = torus(CUP.RT, 0.02, 4, 18);
     rimGeo.rotateX(Math.PI / 2);
     rimGeo.translate(0, CUP.H, 0);
     const hullGeo = mergeGeometries([stripAttrs(buildShellGeo()), stripAttrs(rimGeo)])!;
@@ -231,25 +231,25 @@ export class CupRenderer {
     this.rim = new THREE.InstancedMesh(rimGeo, toon(palette.cupRim), maxCups);
 
     // Sealed film: a thin lens-shaped disc on top.
-    const lidGeo = sphere(1, 22, 8);
+    const lidGeo = sphere(1, 16, 5);
     lidGeo.scale(CUP.RT * 1.02, 0.045, CUP.RT * 1.02);
     lidGeo.translate(0, CUP.H, 0);
     this.lid = new THREE.InstancedMesh(lidGeo, toon('#ffffff'), maxCups);
     this.lid.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxCups * 3), 3);
 
-    const strawGeo = cylinder(0.042, 0.042, 0.62, 12);
+    const strawGeo = cylinder(0.042, 0.042, 0.62, 8);
     strawGeo.translate(0, 0.31, 0);
     this.straw = new THREE.InstancedMesh(strawGeo, toon('#ffffff'), maxCups);
     this.straw.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxCups * 3), 3);
     this.strawHull = new THREE.InstancedMesh(strawGeo, outline(0.016), maxCups);
 
-    const foamGeo = sphere(1, 16, 8, );
+    const foamGeo = sphere(1, 12, 5);
     foamGeo.scale(CUP.RT * 0.88, 0.07, CUP.RT * 0.88);
     this.foamCap = new THREE.InstancedMesh(foamGeo, toon(palette.foam), maxCups);
 
-    this.spheres = new THREE.InstancedMesh(sphere(1, 10, 8), toon('#ffffff'), maxToppings);
+    this.spheres = new THREE.InstancedMesh(sphere(1, 7, 5), toon('#ffffff'), maxToppings);
     this.spheres.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxToppings * 3), 3);
-    this.cubes = new THREE.InstancedMesh(roundedBox(2, 2, 2, 0.45, 2), toon('#ffffff'), maxToppings);
+    this.cubes = new THREE.InstancedMesh(roundedBox(2, 2, 2, 0.45, 1), toon('#ffffff'), maxToppings);
     this.cubes.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxToppings * 3), 3);
 
     for (const mesh of [this.liquid, this.shell, this.hull, this.rim, this.lid, this.straw, this.strawHull, this.foamCap, this.spheres, this.cubes]) {
@@ -265,8 +265,8 @@ export class CupRenderer {
     this.shellMat.uniforms.uTime.value = time;
   }
 
-  /** Draw one cup with world matrix `mat`. */
-  draw(mat: THREE.Matrix4, look: CupLook): void {
+  /** Draw one cup with world matrix `mat`. `strawK` scales the straw (0 hides it: stacked cups get theirs at handoff). */
+  draw(mat: THREE.Matrix4, look: CupLook, strawK = 1): void {
     if (this.n >= this.maxCups) return;
     const i = this.n++;
     this.liquid.setMatrixAt(i, mat);
@@ -290,12 +290,13 @@ export class CupRenderer {
       this.lid.setMatrixAt(j, this.m);
       this.lid.setColorAt(j, look.lidColor);
     }
-    if (look.straw > 0.001) {
+    const straw = look.straw * strawK;
+    if (straw > 0.001) {
       const j = this.nStraw++;
       this.e.set(0.16, 0, -0.12);
       this.q.setFromEuler(this.e);
-      this.v.set(0.045, CUP.H - 0.28 + 0.28 * look.straw, -0.02);
-      this.sc.set(1, look.straw, 1);
+      this.v.set(0.045, CUP.H - 0.28 + 0.28 * straw, -0.02);
+      this.sc.set(1, straw, 1);
       this.m2.compose(this.v, this.q, this.sc);
       this.m.multiplyMatrices(mat, this.m2);
       this.straw.setMatrixAt(j, this.m);
