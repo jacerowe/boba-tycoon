@@ -64,7 +64,7 @@ const tinyShop: StageDef = {
   name: 'Tiny Boba Shop',
   order: 2,
   bounds: { minX: -6.4, maxX: 6.4, minZ: -1.75, maxZ: 5.95 },
-  focus: v(0, -0.6),
+  focus: v(0, -1.2),
   stations: [
     slot('counter', 'shopCounter', v(0, -2.35), v(0, 0), 0.8),
     slot('cup', 'cup', R(-128), sc),

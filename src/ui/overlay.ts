@@ -5,6 +5,7 @@ import { feel } from '../config/feel';
 import { palette } from '../config/style';
 import { iconImg, iconUrl, stepIcon } from './icons';
 import { S } from './strings';
+import { canFlash } from './flash';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', parent?: HTMLElement): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -223,7 +224,7 @@ export class Overlay {
   /** Edge flash, capped in brightness and rate (never faster than feel.flash.maxHz). */
   edgeFlash(color: string): void {
     const now = performance.now();
-    if (now - this.lastFlash < 1000 / feel.flash.maxHz) return;
+    if (!canFlash(now, this.lastFlash, feel.flash.maxHz)) return;
     this.lastFlash = now;
     this.flashT = 0;
     this.flashColor = color;

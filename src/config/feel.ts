@@ -106,7 +106,7 @@ export const feel = {
     /** Camera distance per stage (m). Grows as the shop grows. */
     distance: { cart: 12, tinyShop: 17 } as Record<string, number>,
     /** Keep this many metres of world visible across the narrow axis per stage. */
-    frameWidth: { cart: 7.1, tinyShop: 11 } as Record<string, number>,
+    frameWidth: { cart: 7.1, tinyShop: 12.2 } as Record<string, number>,
     /** Landscape: metres of ground depth to keep visible vertically. */
     frameDepth: { cart: 10.5, tinyShop: 15 } as Record<string, number>,
     /** Follow spring (critically damped-ish). */

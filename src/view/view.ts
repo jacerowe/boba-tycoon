@@ -1041,8 +1041,8 @@ export class GameView {
     if (!recipeId || this.revealing || this.shakeActive) { this.overlay.setTicket(false, '', [], 0); return; }
     const steps = sim.reg.recipe(recipeId).steps.filter((s) => s !== 'serve');
     this.overlay.setTicket(true, this.icons.get(recipeId), steps, Math.min(done, steps.length));
-    const p = this.project(tmpV.set(px, 2.05 + (P.stack.length > 3 ? (P.stack.length - 3) * 0.4 : 0), pz));
-    this.overlay.place(this.overlay.ticket, p.x, p.y, 1);
+    const p = this.project(tmpV.set(px, 0, pz + 0.55));
+    this.overlay.place(this.overlay.ticket, p.x, p.y + 44, 1);
   }
 
   private updateBubble(c: CustomerState, v: CustView): void {
@@ -1065,8 +1065,10 @@ export class GameView {
     const claimed = this.sim.claimedCustomers().has(c.id);
     b.root.classList.toggle('claimed', claimed);
     b.pop = Math.min(1, b.pop + 1 / 12);
-    const s = ease.outBack(b.pop) * (c.scripted === 'tutorial' ? 1.15 : 1);
-    const p = this.project(tmpV.set(v.x, (1.62 + v.hop) * v.look.height + 0.35, v.z));
+    const zoom = Math.min(1, 16 / Math.max(8, this.rig.camera.position.distanceTo(tmpV.set(v.x, 0, v.z))));
+    const s = ease.outBack(b.pop) * (c.scripted === 'tutorial' ? 1.15 : 1) * (0.72 + 0.28 * zoom);
+    const lift = c.queueIndex >= 0 && c.queueIndex % 2 === 1 ? 0.55 : 0;
+    const p = this.project(tmpV.set(v.x, (1.62 + v.hop) * v.look.height + 0.35 + lift, v.z));
     this.overlay.place(b.root, p.x, p.y, s);
   }
 

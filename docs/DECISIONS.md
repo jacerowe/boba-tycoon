@@ -69,3 +69,9 @@ One line per call. Where the brief was silent, I picked whatever makes the game 
 ## Tech
 - Preview port 4391 for Playwright and 5287 for the dev server (other local apps already used 4173/5199).
 - Git identity is repo-local and uses Jace's GitHub noreply address so the public repo doesn't expose a personal email.
+
+## Rush tuning (M4)
+- Practice rush is 28s (the brief says ~20s): at ~5s per drink under rush, two carry-2 round trips (4 serves → x3) don't fit in 20s once the crowd has to walk in. Thresholds stay 2/4/6 as specified.
+- Practice rush crowd lines up during the "RUSH INCOMING" warning (a head start) and orders the simplest drink (Pearl Tea). Both are event data (`crowdEarly`, `crowdRecipe`).
+- The goal pad appears at exactly 8:00 game time (matches "8:00–10:00: toward the goal"); Tiny Shop price 375. Competent bot: 8.3–9.2 min; casual: 14.1–14.6 min.
+- Flash limiter is a pure function (`ui/flash.ts`) unit-tested against spammed tier-ups: never more than one edge flash per 1/3 s.

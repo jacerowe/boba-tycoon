@@ -65,7 +65,7 @@ export function startEvent(sim: Sim, eventId: string): boolean {
   w.events.active = { defId: eventId, phase: 'warning', t: 0, warningSec: def.warningSec, durationSec: duration, comboTable: comboTableFor(sim, def.comboTable), results };
   w.events.eligibleT = 0;
   sim.emit({ type: 'RushWarning', eventId, warningSec: def.warningSec, practice: def.trigger.kind === 'scripted' });
-  for (let i = 0; i < def.crowdSize; i++) customers.spawnCustomer(sim, { crowd: true, eventId, crowdIndex: i });
+  for (let i = 0; i < def.crowdSize; i++) customers.spawnCustomer(sim, { crowd: true, eventId, crowdIndex: i, recipeId: def.crowdRecipe });
   return true;
 }
 

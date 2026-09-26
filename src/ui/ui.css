@@ -150,9 +150,9 @@ html, body {
 .callout {
   position: absolute; left: 50%; top: 22%; transform: translateX(-50%) scale(0); display: flex; align-items: center; gap: 8px;
   background: var(--panel); border: 3px solid var(--ink); border-radius: 20px; padding: 8px 14px; box-shadow: 0 4px 0 var(--ink);
-  font-weight: 900; font-size: 20px; white-space: nowrap;
+  font-weight: 900; font-size: 18px; max-width: calc(100vw - 24px); flex-wrap: wrap; justify-content: center;
 }
-.callout img { width: 40px; height: 40px; }
+.callout img { width: 36px; height: 36px; }
 .callout.show { animation: popCallout 420ms cubic-bezier(.3,1.8,.5,1) forwards; }
 .callout.hide { animation: fadeOut 260ms ease-in forwards; }
 @keyframes popCallout { from { transform: translateX(-50%) scale(0); } to { transform: translateX(-50%) scale(1); } }

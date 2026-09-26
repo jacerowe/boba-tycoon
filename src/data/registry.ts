@@ -190,6 +190,7 @@ export function validate(reg: Registry): void {
     if (ev.comboTable && ev.comboTable !== 'stage' && !balance.combo.tables[ev.comboTable]) fail(`event ${ev.id}: unknown combo table "${ev.comboTable}"`);
     if (ev.trigger.kind === 'random' && !beatIds.has(ev.trigger.enabledFromBeat)) fail(`event ${ev.id}: unknown beat "${ev.trigger.enabledFromBeat}"`);
     if (ev.durationSec[0] > ev.durationSec[1]) fail(`event ${ev.id}: bad duration range`);
+    if (ev.crowdRecipe && !reg.recipes.has(ev.crowdRecipe)) fail(`event ${ev.id}: unknown crowd recipe "${ev.crowdRecipe}"`);
   }
   if (reg.districts.size === 0) fail('no districts');
 }

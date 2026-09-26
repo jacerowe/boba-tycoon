@@ -183,6 +183,10 @@ export interface GameEventDef {
   patienceMult: number;
   /** Bonus coins per serve paid on claim. */
   claimBonusPerServe: number;
+  /** The crowd lines up during the warning (a head start), instead of when the rush starts. */
+  crowdEarly?: boolean;
+  /** Crowd customers all order this recipe (e.g. the practice rush keeps it simple). */
+  crowdRecipe?: string;
 }
 
 export interface DemandProfile {

@@ -19,6 +19,7 @@ export const GAME_EVENTS: GameEventDef[] = [
     id: 'practiceRush', name: 'Practice Rush', warningSec: R.warningSec, durationSec: [R.practiceSec, R.practiceSec],
     modifiers: { ...rushMods, patienceDrain: R.practicePatienceDrainMult }, comboTable: 'practice', trigger: { kind: 'scripted' }, resultsCard: true,
     crowdSize: R.crowdSize, patienceMult: R.practicePatienceMult, claimBonusPerServe: R.claimBonusPerServe,
+    crowdEarly: true, crowdRecipe: 'pearlTea',
   },
   {
     id: 'rush', name: 'Drink Rush', warningSec: R.warningSec, durationSec: R.randomSec,

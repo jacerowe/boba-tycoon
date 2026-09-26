@@ -111,7 +111,7 @@ export class World {
     tree(b, -11, -3, 1.1); tree(b, -14, 2, 1.25); tree(b, 11.5, -2.5, 1.15); tree(b, 13.5, 3.5, 1.2); tree(b, -10.5, 6.5, 1); tree(b, 10.4, 7, 1);
     bush(b, -9.6, -5.8, 1, palette.flower[0]); bush(b, 9.7, -5.6, 1, palette.flower[1]); bush(b, -12.5, -5.8, 0.9, palette.flower[2]); bush(b, 12.6, -6, 0.9);
     // Behind the lot
-    for (let x = -7; x <= 7; x += 3.5) tree(b, x + (x % 2), 11 + (x > 0 ? 0.6 : 0), 1.3);
+    for (let x = -7; x <= 7; x += 3.5) tree(b, x + (x % 2), 15 + (x > 0 ? 0.6 : 0), 1.3);
     // Lamps along the sidewalk
     for (const x of [-12, 12, -24, 24]) lamp(b, x, SIDEWALK.z0 + 0.5);
     // Across the road: three empty lots with fences.

@@ -104,7 +104,7 @@ export const balance = {
     fasterSealer: { cost: 35, showWaitSec: 12 },
     biggerPearlPot: { cost: 30, showEmptyHits: 2 },
     bench: { cost: 40, showAngry: 4 },
-    tinyShop: { cost: 395 },
+    tinyShop: { cost: 375 },
     carry5: { cost: 110, showFullHands: 3 },
     carry8: { cost: 220, showFullHands: 4 },
     carry12: { cost: 400, showFullHands: 5 },
@@ -138,7 +138,7 @@ export const balance = {
 
   rush: {
     warningSec: 4,
-    practiceSec: 22,
+    practiceSec: 28,
     randomSec: [30, 45] as [number, number],
     /** Everything speeds up. */
     speedMult: 1.5,
@@ -174,7 +174,7 @@ export const balance = {
     practiceRushMinSec: 200,
     practiceRushAtServes: 16,
     secondToppingMinSec: 330,
-    goalMinSec: 440,
+    goalMinSec: 480,
     /** Early traffic is gentle: customers per minute during the first beats. */
     earlyPerMinute: 3.6,
     earlyMaxAlive: 2,

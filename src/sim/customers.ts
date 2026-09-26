@@ -246,10 +246,12 @@ export function update(sim: Sim, dt: number): void {
   const benchOwned = upgrades.hasBench(sim);
   const walkoutsOn = !!world.director.flags.walkoutsEnabled;
   const counter = stage.stations.find((s) => sim.reg.station(s.def).role === 'counter')!;
-  const rushActive = world.events.active?.phase === 'active';
+  const ev = world.events.active;
+  const rushActive = ev?.phase === 'active';
+  const crowdEarly = !!ev && ev.phase === 'warning' && !!sim.reg.event(ev.defId).crowdEarly;
 
-  // Crowd members pour into the line as soon as the rush is on.
-  if (rushActive) {
+  // Crowd members pour into the line as soon as the rush is on (or during the warning, for practice).
+  if (rushActive || crowdEarly) {
     for (const c of world.customers) {
       if (c.phase !== 'crowd') continue;
       if (queueCount(sim) >= queueCapacity(sim)) break;
